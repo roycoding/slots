@@ -142,7 +142,7 @@ class MAB():
             print 'slots: No trials run so far.'
             return None
         else:
-            return self.choices[-1]
+            return np.argmax(self.wins/self.pulls)
 
 
 class Bandits():
