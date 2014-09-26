@@ -130,7 +130,7 @@ class MAB():
         '''
 
         if params and type(params) == dict:
-            eps = param
+            eps = params['epsilon']
         else:
             eps = 0.1
 
@@ -193,9 +193,9 @@ class Bandits():
         if not live:
             # Only use arrays of equal length
             if len(probs) != len(payouts):
-                raise Exception('Bandits.__init__: Probability and payouts
-                                arrays of different lengths!')
-            self.probs = prob
+                raise Exception('Bandits.__init__: Probability and payouts '
+                                + 'arrays of different lengths!')
+            self.probs = probs
             self.payouts = payouts
             self.live = False
         else:
