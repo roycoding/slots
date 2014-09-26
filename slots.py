@@ -17,12 +17,13 @@ Scenarios:
 
 import numpy as np
 
+
 class MAB():
     '''
     Multi-armed bandit test class.
     '''
 
-    def __init__(self, num_bandits=None,probs=None,payouts=None,live=False):
+    def __init__(self, num_bandits=None, probs=None, payouts=None, live=False):
         '''
         Instantiate MAB class, determining
             - Number of bandits
@@ -47,27 +48,27 @@ class MAB():
             if payouts is None:
                 if not num_bandits:
                     num_bandits = default_num_bandits
-                self.bandits = Bandits(probs = [np.random.rand() for x in 
-                                            range(num_bandits)],
-                                            payouts = np.ones(num_bandits))
+                self.bandits = Bandits(probs=[np.random.rand() for x in
+                                       range(num_bandits)],
+                                       payouts=np.ones(num_bandits))
             else:
                 if live:
-                    self.bandits = Bandits(live = True, payouts = payouts, probs=None)
+                    self.bandits = Bandits(live=True, payouts=payouts,
+                                           probs=None)
                 else:
                     # Not sure why anyone would do this
-                    self.bandits = Bandits(probs = [np.random.rand() for x in 
-                                            range(len(payouts))],
-                                            payouts = payouts)
+                    self.bandits = Bandits(probs=[np.random.rand() for x in
+                                           range(len(payouts))],
+                                           payouts=payouts)
                 num_bandits = len(payouts)
         else:
             if payouts:
-                self.bandits = Bandits(probs = probs, payouts = payouts)
+                self.bandits = Bandits(probs=probs, payouts=payouts)
                 num_bandits = len(payouts)
             else:
-                self.bandits = Bandits(probs = probs,
-                                        payouts = np.ones(len(payouts)))
+                self.bandits = Bandits(probs=probs,
+                                       payouts=np.ones(len(payouts)))
                 num_bandits = len(probs)
-
 
         self.wins = np.zeros(num_bandits)
         self.pulls = np.zeros(num_bandits)
@@ -75,7 +76,7 @@ class MAB():
     def run(self, trials=100, strategy=None, parameters=None):
         '''
         Run MAB test with T trials.
-        
+
         Paramters:
             trials (integer) - number of trials to run.
             strategy (string) - name of selected strategy.
@@ -84,7 +85,7 @@ class MAB():
         Currently on epsilon greedy is implemented.
         '''
 
-        strategies = {'eps_greedy':self.eps_greedy}
+        strategies = {'eps_greedy': self.eps_greedy}
 
         if trials < 1:
             raise Exception('MAB.run: Number of trials cannot be less than 1!')
@@ -93,7 +94,7 @@ class MAB():
         else:
             if strategy not in strategies:
                 raise Exception('MAB,run: Strategy name invalid. Choose from: '
-                                 + ', '.join(strategies))
+                                + ', '.join(strategies))
 
         # Run strategy
         for n in xrange(trials):
@@ -102,7 +103,7 @@ class MAB():
             self.choices.append(choice)
             payout = self.bandits.pull(choice)
             if payout is None:
-                print 'Trials exhausted. No more values for bandit',choice
+                print 'Trials exhausted. No more values for bandit', choice
                 break
             else:
                 self.wins[choice] += payout
@@ -113,14 +114,14 @@ class MAB():
 
     def max_mean(self):
         """
-        Pick the bandit with the current best observed proportion of winning 
+        Pick the bandit with the current best observed proportion of winning.
 
         Input: self
         Output: None
         """
-        return np.argmax( self.wins / ( self.pulls +1 ) )
+        return np.argmax(self.wins / (self.pulls + 1))
 
-    def eps_greedy(self,params):
+    def eps_greedy(self, params):
         '''
         Run the epsilon-greedy MAB algorithm.
 
@@ -135,7 +136,8 @@ class MAB():
 
         r = np.random.rand()
         if r < eps:
-            return np.random.choice(list(set(range(len(self.wins)))-{self.max_mean()}))
+            return np.random.choice(list(set(range(len(self.wins))) -
+                                    {self.max_mean()}))
         else:
             return self.max_mean()
 
@@ -167,6 +169,7 @@ class MAB():
         else:
             return self.wins/self.pulls
 
+
 class Bandits():
     '''
     Bandit class.
@@ -190,8 +193,9 @@ class Bandits():
         if not live:
             # Only use arrays of equal length
             if len(probs) != len(payouts):
-                raise Exception('Bandits.__init__: Probability and payouts arrays of different lengths!')
-            self.probs = probs
+                raise Exception('Bandits.__init__: Probability and payouts
+                                arrays of different lengths!')
+            self.probs = prob
             self.payouts = payouts
             self.live = False
         else:
@@ -199,7 +203,7 @@ class Bandits():
             self.probs = None
             self.payouts = payouts
 
-    def pull(self,i):
+    def pull(self, i):
         '''
         Return the payout from a single pull of the bandit i's arm.
         '''
