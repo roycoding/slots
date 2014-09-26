@@ -41,11 +41,11 @@ Running tests with strategy, S
 mab.run()
 
 # Run chosen strategy with specified parameters and trials
-map.eps_greedy(eps = 0.2, trials = 10000)
-map.run(strategy = 'eps_greedy',params = {'eps':0.2}, trials = 10000)
+mab.eps_greedy(eps = 0.2, trials = 10000)
+mab.run(strategy = 'eps_greedy',params = {'eps':0.2}, trials = 10000)
 
 # Run strategy, updating old trial data
-map.run(continue = True)
+mab.run(continue = True)
 ```
 
 Displaying / retrieving bandit properties
@@ -69,11 +69,11 @@ Setting bandit properties
 
 ```Python
 # Reset bandits to defaults
-map.bandits.reset()
+mab.bandits.reset()
 
 # Set probabilities or payouts
-map.bandits.probs_set([0.1,0.05,0.2,0.15])
-map.bandits.payouts_set([1,1.5,0.5,0.8])
+mab.bandits.probs_set([0.1,0.05,0.2,0.15])
+mab.bandits.payouts_set([1,1.5,0.5,0.8])
 ```
 
 Displaying / retrieving test info
@@ -83,23 +83,23 @@ Displaying / retrieving test info
 mab.best()
 
 # Retrieve bandit probability estimates
-map.prob_est()
+mab.prob_est()
 
 # Retrieve bandit probability estimate of bandit i
-map.prob_est(i)
+mab.prob_est(i)
 
 # Retrieve bandit payout estimates (p * payout)
-map.payout_est()
+mab.payout_est()
 
 # Retrieve current bandit choice
-map.current()
+mab.current()
 
 # Retrieve sequence of choices
-map.choices
+mab.choices
 
 # Retrieve probabilty estimate history
-map.prob_est_sequence
+mab.prob_est_sequence
 
 # Retrieve test strategy info (current strategy) -- a dict
-map.strategy_info()
+mab.strategy_info()
 ```
