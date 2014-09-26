@@ -22,7 +22,7 @@ class MAB():
     Multi-armed bandit test class.
     '''
 
-    def __init__(self, num_bandits=None,probs=False,payouts=False,live=False):
+    def __init__(self, num_bandits=None,probs=None,payouts=None,live=False):
         '''
         Instantiate MAB class, determining
             - Number of bandits
@@ -44,7 +44,7 @@ class MAB():
         self.choices = []
 
         if not probs:
-            if not payouts:
+            if payouts is None:
                 if not num_bandits:
                     num_bandits = default_num_bandits
                 self.bandits = Bandits(probs = [np.random.rand() for x in 
@@ -52,18 +52,22 @@ class MAB():
                                             payouts = np.ones(num_bandits))
             else:
                 if live:
-                    self.bandits = Bandits(live = True, payouts = payouts)
+                    self.bandits = Bandits(live = True, payouts = payouts, probs=None)
                 else:
                     # Not sure why anyone would do this
                     self.bandits = Bandits(probs = [np.random.rand() for x in 
                                             range(len(payouts))],
                                             payouts = payouts)
+                num_bandits = len(payouts)
         else:
             if payouts:
                 self.bandits = Bandits(probs = probs, payouts = payouts)
+                num_bandits = len(payouts)
             else:
                 self.bandits = Bandits(probs = probs,
                                         payouts = np.ones(len(payouts)))
+                num_bandits = len(probs)
+
 
         self.wins = np.zeros(num_bandits)
         self.pulls = np.zeros(num_bandits)
@@ -94,10 +98,15 @@ class MAB():
         # Run strategy
         for n in xrange(trials):
             choice = strategies[strategy](params=parameters)
-            self.choices.append(choice)
-            self.pulls[choice] += 1
-            self.wins[choice] += self.bandits.pull(choice)
 #            print 'DEBUG - run - choice:',choice
+            self.choices.append(choice)
+            payout = self.bandits.pull(choice)
+            if payout is None:
+                print 'Trials exhausted. No more values for bandit',choice
+                break
+            else:
+                self.wins[choice] += payout
+            self.pulls[choice] += 1
 #            print 'DEBUG - run - choices:',self.choices
 #            print 'DEBUG - run - pulls:',self.pulls
 #            print 'DEBUG - run - wins:',self.wins
@@ -144,6 +153,19 @@ class MAB():
         else:
             return np.argmax(self.wins/self.pulls)
 
+    def est_payouts(self):
+        '''
+        Calculate current estimate of average payout for each bandit.
+
+        Input: Self
+        Output: list of floats
+        '''
+
+        if len(self.choices) < 1:
+            print 'slots: No trials run so far.'
+            return None
+        else:
+            return self.wins/self.pulls
 
 class Bandits():
     '''
