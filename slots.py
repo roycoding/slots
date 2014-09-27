@@ -85,7 +85,8 @@ class MAB():
         Currently on epsilon greedy is implemented.
         '''
 
-        strategies = {'eps_greedy': self.eps_greedy}
+        strategies = {'eps_greedy': self.eps_greedy,
+                      'softmax': self.softmax}
 
         if trials < 1:
             raise Exception('MAB.run: Number of trials cannot be less than 1!')
@@ -112,6 +113,7 @@ class MAB():
 #            print 'DEBUG - run - pulls:',self.pulls
 #            print 'DEBUG - run - wins:',self.wins
 
+    #### ----------- MAB strategies ----------------------------------------####
     def max_mean(self):
         """
         Pick the bandit with the current best observed proportion of winning.
@@ -119,7 +121,7 @@ class MAB():
         Input: self
         Output: None
         """
-        return np.argmax(self.wins / (self.pulls + 1))
+        return np.argmax(self.wins / (self.pulls + 0.1))
 
     def eps_greedy(self, params):
         '''
@@ -130,7 +132,7 @@ class MAB():
         '''
 
         if params and type(params) == dict:
-            eps = params['epsilon']
+            eps = params.get('epsilon')
         else:
             eps = 0.1
 
@@ -140,6 +142,37 @@ class MAB():
                                     {self.max_mean()}))
         else:
             return self.max_mean()
+
+    def softmax(self, params):
+        '''
+        Run the softmax selection algorithm.
+
+        Input: dict of parameters (tau)
+        Output: None
+        '''
+
+        default_tau = 1.0
+
+        if params and type(params) == dict:
+            tau = params.get('tau')
+            try:
+                float(tau)
+            except ValueError:
+                'slots: softmax: Setting tau to default'
+                tau = default_tau
+        else:
+            tau = default_tau
+
+        # Handle cold start. Not all bandits tested yet.
+        if False in (self.pulls < 3):
+            return np.random.choice(xrange(len(self.pulls)))
+        else:
+            payouts = self.wins / (self.pulls + 0.1)
+            norm = sum(np.exp(payouts/tau))
+
+            return np.argmax(np.exp(payouts/tau)/norm)
+
+    ####--------------------------------------------------------------------####
 
     def best(self):
         '''
@@ -153,7 +186,7 @@ class MAB():
             print 'slots: No trials run so far.'
             return None
         else:
-            return np.argmax(self.wins/self.pulls)
+            return np.argmax(self.wins/(self.pulls+0.1))
 
     def est_payouts(self):
         '''
@@ -167,7 +200,7 @@ class MAB():
             print 'slots: No trials run so far.'
             return None
         else:
-            return self.wins/self.pulls
+            return self.wins/(self.pulls+0.1)
 
 
 class Bandits():
