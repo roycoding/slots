@@ -164,13 +164,30 @@ class MAB():
             tau = default_tau
 
         # Handle cold start. Not all bandits tested yet.
-        if False in (self.pulls < 3):
+        if True in (self.pulls < 3):
             return np.random.choice(xrange(len(self.pulls)))
         else:
             payouts = self.wins / (self.pulls + 0.1)
             norm = sum(np.exp(payouts/tau))
 
-            return np.argmax(np.exp(payouts/tau)/norm)
+        ps = np.exp(payouts/tau)/norm
+
+        # Randomly choose index based on CDF
+        cdf = [sum(ps[:i+1]) for i in range(len(ps))]
+
+        rand = np.random.rand()
+
+        found = False
+        found_i = None
+        i = 0
+        while not found:
+            if rand < cdf[i]:
+                found_i = i
+                found = True
+            else:
+                i += 1
+
+        return found_i
 
     ####--------------------------------------------------------------------####
 
