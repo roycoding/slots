@@ -86,7 +86,8 @@ class MAB():
         '''
 
         strategies = {'eps_greedy': self.eps_greedy,
-                      'softmax': self.softmax}
+                      'softmax': self.softmax,
+                      'ucb': self.ucb}
 
         if trials < 1:
             raise Exception('MAB.run: Number of trials cannot be less than 1!')
@@ -119,7 +120,7 @@ class MAB():
         Pick the bandit with the current best observed proportion of winning.
 
         Input: self
-        Output: None
+        Output: int (index of chosen bandit)
         """
         return np.argmax(self.wins / (self.pulls + 0.1))
 
@@ -148,7 +149,7 @@ class MAB():
         Run the softmax selection algorithm.
 
         Input: dict of parameters (tau)
-        Output: None
+        Output: int (index of chosen bandit)
         '''
 
         default_tau = 1.0
@@ -172,8 +173,8 @@ class MAB():
 
         ps = np.exp(payouts/tau)/norm
 
-        # Randomly choose index based on CDF
-        cdf = [sum(ps[:i+1]) for i in range(len(ps))]
+        # Randomly choose index based on CMF
+        cmf = [sum(ps[:i+1]) for i in range(en(ps))]
 
         rand = np.random.rand()
 
@@ -181,13 +182,33 @@ class MAB():
         found_i = None
         i = 0
         while not found:
-            if rand < cdf[i]:
+            if rand < cmf[i]:
                 found_i = i
                 found = True
             else:
                 i += 1
 
         return found_i
+
+    def ucb(self,params=None):
+        '''
+        Run the upper credible bound MAB selection algorithm.
+
+        Input: None (doesn't need parameters)
+        Output: int (index of chosen bandit)
+        '''
+
+        # UBC = j_max(payout_j + sqrt(2ln(n_tot)/n_j))
+
+        # Handle cold start. Not all bandits tested yet.
+        if True in (self.pulls < 3):
+            return np.random.choice(xrange(len(self.pulls)))
+        else:
+            n_tot = sum(self.pulls)
+            payouts = self.wins / (self.pulls + 0.1)
+            ubcs = payouts + np.sqrt(2*np.log(n_tot)/self.pulls)
+
+            return np.argmax(ubcs)
 
     ####--------------------------------------------------------------------####
 

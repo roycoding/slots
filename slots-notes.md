@@ -103,3 +103,10 @@ mab.prob_est_sequence
 # Retrieve test strategy info (current strategy) -- a dict
 mab.strategy_info()
 ```
+
+###Proposed MAB strategies
+1. Epsilon-greedy
+2. Epsilon decreasing
+3. Softmax
+4. Softmax decreasing
+5. Upper credible bound
