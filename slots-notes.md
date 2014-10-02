@@ -10,6 +10,7 @@
     2. number of trials completed for each arm
     3. scores for each arm
     4. average payout per arm (payout*wins/trials?)
+    5. Current regret.  Regret = Trials*mean_max - sum^T_t=1(reward_t) See [ref](https://www.princeton.edu/~sbubeck/SurveyBCB12.pdf)
 6. Use sane defaults.
 7. Be obvious and clean.
 

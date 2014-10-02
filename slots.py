@@ -240,6 +240,18 @@ class MAB():
         else:
             return self.wins/(self.pulls+0.1)
 
+    def regret(self):
+        '''
+        Calculate expected regret, where expected regret is
+
+        expected regret = T*max_k(mean_k) - sum_(t=1-->T) (reward_t)
+
+        Input: None
+        Output: float
+        '''
+
+        return (sum(self.pulls)*np.max(self.wins/self.pulls) - sum(self.wins))/\
+               sum(self.pulls)
 
 class Bandits():
     '''
