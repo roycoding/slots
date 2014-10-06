@@ -111,3 +111,22 @@ mab.strategy_info()
 3. Softmax
 4. Softmax decreasing
 5. Upper credible bound
+
+###Example: Running slots with a live website
+```Python
+# Using slots to determine the best of 3 variations on a live website.
+mab = slots.MAB(live=True, payouts=[]*3)
+
+# Make the first choice randomly, record responses, and input reward
+# 2 was chosen.
+# Run online trial (input most recent result) until test criteria is met.
+mab.online_trial(bandit=2,payout=1)
+
+# Repsonse of mab.online_trial() is a dict of the form:
+{'new_trial': boolean, 'choice': int, 'best': int}
+
+# Where:
+#   If the criterion is met, new_trial = False.
+#   choice is the current choice of arm to try.
+#   best is the current best estimate of the highest payout arm.
+```
