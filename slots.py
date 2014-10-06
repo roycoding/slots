@@ -23,7 +23,8 @@ class MAB():
     Multi-armed bandit test class.
     '''
 
-    def __init__(self, num_bandits=None, probs=None, payouts=None, live=False):
+    def __init__(self, num_bandits=None, probs=None, payouts=None, live=False,
+                 stop_criterion={'criterion': 'regret', 'value': 1.0}):
         '''
         Instantiate MAB class, determining
             - Number of bandits
@@ -38,6 +39,7 @@ class MAB():
                 - If 'live' = True, a N*T array of floats indication payout
                     amount per pull for N bandits and T trials
             - Boolean indicating if data is live
+            - Dict listing name of stopping criterion and threshold value.
         '''
 
         default_num_bandits = 3
@@ -72,6 +74,16 @@ class MAB():
 
         self.wins = np.zeros(num_bandits)
         self.pulls = np.zeros(num_bandits)
+
+        # Set the stopping criteria
+        self.criteria = {'regret': self.regret_met}
+        if stop_criterion.get('criterion') in self.criteria:
+            self.criterion = criterion
+            if stop_criterion.get('value'):
+                self.stop_value = stop_criterion['value']
+        else:
+            self.criterion = 'regret'
+            self.stop_value = 1.0
 
     def run(self, trials=100, strategy=None, parameters=None):
         '''
@@ -114,7 +126,7 @@ class MAB():
 #            print 'DEBUG - run - pulls:',self.pulls
 #            print 'DEBUG - run - wins:',self.wins
 
-    #### ----------- MAB strategies ----------------------------------------####
+######## ----------- MAB strategies ---------------------------------------####
     def max_mean(self):
         """
         Pick the bandit with the current best observed proportion of winning.
@@ -190,7 +202,7 @@ class MAB():
 
         return found_i
 
-    def ucb(self,params=None):
+    def ucb(self, params=None):
         '''
         Run the upper credible bound MAB selection algorithm.
 
@@ -210,7 +222,7 @@ class MAB():
 
             return np.argmax(ubcs)
 
-    ####--------------------------------------------------------------------####
+    ####------------------------------------------------------------------####
 
     def best(self):
         '''
@@ -250,8 +262,68 @@ class MAB():
         Output: float
         '''
 
-        return (sum(self.pulls)*np.max(self.wins/self.pulls) - sum(self.wins))/\
-               sum(self.pulls)
+        return (sum(self.pulls)*np.max(self.wins/self.pulls)
+                - sum(self.wins)) / sum(self.pulls)
+
+    def crit_met(self):
+        '''
+        Determine if stopping criterion has been met.
+
+        Output: Boolean
+        '''
+
+        return self.criteria[self.criterion](self.stop_value)
+
+    def regret_met(self, threshold=self.stop_value):
+        '''
+        Determine if regret criterion has been met.
+
+        Input: float (threshold)
+        Output: Boolean
+        '''
+
+        if self.regret() <= threshold:
+            return True
+        else:
+            return False
+
+    ### ------------ Online bandit testing ------------------------------ ####
+    def online_trial(self, bandit=None, payout=None):
+        '''
+        Update the bandits with the results of the previous live, online trial.
+            Next run a the selection algorithm. If the stopping criteria is
+            met, return the best arm estimate. Otherwise return the next arm to
+            try.
+
+        Input: int (bandit to update), float (payout to update for bandit)
+        Output: dict
+                    format: {'new_trial': boolean, 'choice': int, 'best': int}
+        '''
+
+        if bandit and payout:
+            self.update(bandit=bandit, payout=payout)
+        else:
+            raise Exception('slots.online_trial: bandit and/or payout value'
+                            + ' missing.')
+
+        if self.crit_met():
+            return {'new_trial': False, 'choice': self.best(),
+                    'best': self.best()}
+        else:
+            choice = #self.run(trial=1)
+            pass ################################## Need to implement choice via strategy #######
+
+    def update(self, bandit=None, payout=None):
+        '''
+        Update bandit trials and payouts for given bandit.
+
+        Input: int (bandit number), float (bandit's payout)
+        '''
+
+        self.pulls[bandit] += 1
+        self.wins[bandit] += payout
+        self.bandits.payouts[bandit] += payout
+
 
 class Bandits():
     '''
