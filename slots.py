@@ -76,9 +76,9 @@ class MAB():
         self.pulls = np.zeros(num_bandits)
 
         # Set the stopping criteria
-        self.criteria = {'regret': self.regret_met}
+        self.criteria = {'regret': self.regret_met()}
         if stop_criterion.get('criterion') in self.criteria:
-            self.criterion = criterion
+            self.criterion = stop_criterion['criterion']
             if stop_criterion.get('value'):
                 self.stop_value = stop_criterion['value']
         else:
@@ -107,26 +107,23 @@ class MAB():
             strategy = 'eps_greedy'
         else:
             if strategy not in strategies:
-                raise Exception('MAB,run: Strategy name invalid. Choose from: '
-                                + ', '.join(strategies))
+                raise Exception('MAB,run: Strategy name invalid. Choose from:'
+                                ' {}'.format(', '.join(strategies)))
 
         # Run strategy
-        for n in xrange(trials):
+        for n in range(trials):
             choice = strategies[strategy](params=parameters)
-#            print 'DEBUG - run - choice:',choice
             self.choices.append(choice)
             payout = self.bandits.pull(choice)
             if payout is None:
-                print 'Trials exhausted. No more values for bandit', choice
+                print('Trials exhausted. No more values for bandit', choice)
                 break
             else:
                 self.wins[choice] += payout
             self.pulls[choice] += 1
-#            print 'DEBUG - run - choices:',self.choices
-#            print 'DEBUG - run - pulls:',self.pulls
-#            print 'DEBUG - run - wins:',self.wins
 
-######## ----------- MAB strategies ---------------------------------------####
+
+# ###### ----------- MAB strategies ---------------------------------------####
     def max_mean(self):
         """
         Pick the bandit with the current best observed proportion of winning.
@@ -186,7 +183,7 @@ class MAB():
         ps = np.exp(payouts/tau)/norm
 
         # Randomly choose index based on CMF
-        cmf = [sum(ps[:i+1]) for i in range(en(ps))]
+        cmf = [sum(ps[:i+1]) for i in range(len(ps))]
 
         rand = np.random.rand()
 
@@ -222,7 +219,7 @@ class MAB():
 
             return np.argmax(ubcs)
 
-    ####------------------------------------------------------------------####
+    # ###------------------------------------------------------------------####
 
     def best(self):
         '''
@@ -233,7 +230,7 @@ class MAB():
         '''
 
         if len(self.choices) < 1:
-            print 'slots: No trials run so far.'
+            print('slots: No trials run so far.')
             return None
         else:
             return np.argmax(self.wins/(self.pulls+0.1))
@@ -247,7 +244,7 @@ class MAB():
         '''
 
         if len(self.choices) < 1:
-            print 'slots: No trials run so far.'
+            print('slots: No trials run so far.')
             return None
         else:
             return self.wins/(self.pulls+0.1)
@@ -262,8 +259,8 @@ class MAB():
         Output: float
         '''
 
-        return (sum(self.pulls)*np.max(self.wins/self.pulls)
-                - sum(self.wins)) / sum(self.pulls)
+        return (sum(self.pulls)*np.max(self.wins/self.pulls) -
+                sum(self.wins)) / sum(self.pulls)
 
     def crit_met(self):
         '''
@@ -274,7 +271,7 @@ class MAB():
 
         return self.criteria[self.criterion](self.stop_value)
 
-    def regret_met(self, threshold=self.stop_value):
+    def regret_met(self, threshold=None):
         '''
         Determine if regret criterion has been met.
 
@@ -282,12 +279,14 @@ class MAB():
         Output: Boolean
         '''
 
-        if self.regret() <= threshold:
+        if not threshold:
+            return False
+        elif self.regret() <= threshold:
             return True
         else:
             return False
 
-    ### ------------ Online bandit testing ------------------------------ ####
+    # ## ------------ Online bandit testing ------------------------------ ####
     def online_trial(self, bandit=None, payout=None):
         '''
         Update the bandits with the results of the previous live, online trial.
@@ -304,14 +303,17 @@ class MAB():
             self.update(bandit=bandit, payout=payout)
         else:
             raise Exception('slots.online_trial: bandit and/or payout value'
-                            + ' missing.')
+                            ' missing.')
 
         if self.crit_met():
             return {'new_trial': False, 'choice': self.best(),
                     'best': self.best()}
         else:
-            choice = #self.run(trial=1)
-            pass ################################## Need to implement choice via strategy #######
+            # TODO: implement choice via strategy
+            print('slots: online trial strategy not yet implemented.'
+                  ' No trial run.')
+            # choice = self.run(trial=1)
+            pass
 
     def update(self, bandit=None, payout=None):
         '''
@@ -349,7 +351,7 @@ class Bandits():
             # Only use arrays of equal length
             if len(probs) != len(payouts):
                 raise Exception('Bandits.__init__: Probability and payouts '
-                                + 'arrays of different lengths!')
+                                'arrays of different lengths!')
             self.probs = probs
             self.payouts = payouts
             self.live = False
