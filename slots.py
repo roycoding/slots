@@ -76,20 +76,20 @@ class MAB():
         self.pulls = np.zeros(num_bandits)
 
         # Set the stopping criteria
-        self.criteria = {'regret': self.regret_met()}
+        self.criteria = {'regret': self.regret_met}
         if stop_criterion.get('criterion') in self.criteria:
             self.criterion = stop_criterion['criterion']
             if stop_criterion.get('value'):
                 self.stop_value = stop_criterion['value']
         else:
             self.criterion = 'regret'
-            self.stop_value = 1.0
+            self.stop_value = 0.1
 
     def run(self, trials=100, strategy=None, parameters=None):
         '''
         Run MAB test with T trials.
 
-        Paramters:
+        Parameters:
             trials (integer) - number of trials to run.
             strategy (string) - name of selected strategy.
             parameters (dict) - parameters for selected strategy.
@@ -112,15 +112,29 @@ class MAB():
 
         # Run strategy
         for n in range(trials):
-            choice = strategies[strategy](params=parameters)
-            self.choices.append(choice)
-            payout = self.bandits.pull(choice)
-            if payout is None:
-                print('Trials exhausted. No more values for bandit', choice)
-                break
-            else:
-                self.wins[choice] += payout
-            self.pulls[choice] += 1
+            self._run(strategies[strategy], parameters)
+
+    def _run(self, strategy, parameters=None):
+        '''
+        Run single trial of MAB strategy.
+
+        Input:
+            stategy - function
+            parameters - dictionary
+
+        Output:
+            None
+        '''
+
+        choice = strategy(params=parameters)
+        self.choices.append(choice)
+        payout = self.bandits.pull(choice)
+        if payout is None:
+            print('Trials exhausted. No more values for bandit', choice)
+            return None
+        else:
+            self.wins[choice] += payout
+        self.pulls[choice] += 1
 
 
 # ###### ----------- MAB strategies ---------------------------------------####
@@ -259,7 +273,7 @@ class MAB():
         Output: float
         '''
 
-        return (sum(self.pulls)*np.max(self.wins/self.pulls) -
+        return (sum(self.pulls)*np.max(np.nan_to_num(self.wins/self.pulls)) -
                 sum(self.wins)) / sum(self.pulls)
 
     def crit_met(self):
@@ -280,7 +294,7 @@ class MAB():
         '''
 
         if not threshold:
-            return False
+            return self.regret() <= self.stop_value
         elif self.regret() <= threshold:
             return True
         else:
