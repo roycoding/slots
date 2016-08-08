@@ -69,7 +69,7 @@ class MAB():
                 num_bandits = len(payouts)
             else:
                 self.bandits = Bandits(probs=probs,
-                                       payouts=np.ones(len(payouts)))
+                                       payouts=np.ones(len(probs)))
                 num_bandits = len(probs)
 
         self.wins = np.zeros(num_bandits)
@@ -85,6 +85,9 @@ class MAB():
             self.criterion = 'regret'
             self.stop_value = 0.1
 
+        # Bandit selection strategies
+        self.strategies = ['eps_greedy', 'softmax', 'ucb']
+
     def run(self, trials=100, strategy=None, parameters=None):
         '''
         Run MAB test with T trials.
@@ -94,25 +97,24 @@ class MAB():
             strategy (string) - name of selected strategy.
             parameters (dict) - parameters for selected strategy.
 
-        Currently on epsilon greedy is implemented.
+        Available strategies:
+            - Epsilon-greedy ("eps_greedy")
+            - Softmax ("softmax")
+            - Upper credibility bound ("ucb")
         '''
-
-        strategies = {'eps_greedy': self.eps_greedy,
-                      'softmax': self.softmax,
-                      'ucb': self.ucb}
 
         if trials < 1:
             raise Exception('MAB.run: Number of trials cannot be less than 1!')
         if not strategy:
             strategy = 'eps_greedy'
         else:
-            if strategy not in strategies:
+            if strategy not in self.strategies:
                 raise Exception('MAB,run: Strategy name invalid. Choose from:'
-                                ' {}'.format(', '.join(strategies)))
+                                ' {}'.format(', '.join(self.strategies)))
 
         # Run strategy
         for n in range(trials):
-            self._run(strategies[strategy], parameters)
+            self._run(strategy, parameters)
 
     def _run(self, strategy, parameters=None):
         '''
@@ -126,7 +128,7 @@ class MAB():
             None
         '''
 
-        choice = strategy(params=parameters)
+        choice = self.run_strategy(strategy, parameters)
         self.choices.append(choice)
         payout = self.bandits.pull(choice)
         if payout is None:
@@ -136,6 +138,19 @@ class MAB():
             self.wins[choice] += payout
         self.pulls[choice] += 1
 
+    def run_strategy(self, strategy, parameters):
+        '''
+        Run the selected strategy and retrun bandit choice.
+
+        Input:
+            strategy - string of strategy name
+            parameters - dict of strategy function parameters
+
+        Output:
+            integer. Call strategy function, which returns bandit arm choice.
+        '''
+
+        return self.__getattribute__(strategy)(params=parameters)
 
 # ###### ----------- MAB strategies ---------------------------------------####
     def max_mean(self):
@@ -145,6 +160,7 @@ class MAB():
         Input: self
         Output: int (index of chosen bandit)
         """
+
         return np.argmax(self.wins / (self.pulls + 0.1))
 
     def eps_greedy(self, params):
@@ -161,6 +177,7 @@ class MAB():
             eps = 0.1
 
         r = np.random.rand()
+
         if r < eps:
             return np.random.choice(list(set(range(len(self.wins))) -
                                     {self.max_mean()}))
@@ -175,7 +192,7 @@ class MAB():
         Output: int (index of chosen bandit)
         '''
 
-        default_tau = 1.0
+        default_tau = 0.1
 
         if params and type(params) == dict:
             tau = params.get('tau')
@@ -189,7 +206,7 @@ class MAB():
 
         # Handle cold start. Not all bandits tested yet.
         if True in (self.pulls < 3):
-            return np.random.choice(xrange(len(self.pulls)))
+            return np.random.choice(range(len(self.pulls)))
         else:
             payouts = self.wins / (self.pulls + 0.1)
             norm = sum(np.exp(payouts/tau))
@@ -225,7 +242,7 @@ class MAB():
 
         # Handle cold start. Not all bandits tested yet.
         if True in (self.pulls < 3):
-            return np.random.choice(xrange(len(self.pulls)))
+            return np.random.choice(range(len(self.pulls)))
         else:
             n_tot = sum(self.pulls)
             payouts = self.wins / (self.pulls + 0.1)
@@ -301,16 +318,22 @@ class MAB():
             return False
 
     # ## ------------ Online bandit testing ------------------------------ ####
-    def online_trial(self, bandit=None, payout=None):
+    def online_trial(self, bandit=None, payout=None, strategy='eps_greedy',
+                     parameters=None):
         '''
         Update the bandits with the results of the previous live, online trial.
             Next run a the selection algorithm. If the stopping criteria is
             met, return the best arm estimate. Otherwise return the next arm to
             try.
 
-        Input: int (bandit to update), float (payout to update for bandit)
-        Output: dict
-                    format: {'new_trial': boolean, 'choice': int, 'best': int}
+        Input:
+            bandit - int of bandit index
+            payout - float of payout value
+            strategy - string name of update strategy
+            parameters - dict of parameters for update strategy function
+
+        Output:
+            dict - format: {'new_trial': boolean, 'choice': int, 'best': int}
         '''
 
         if bandit and payout:
@@ -323,11 +346,9 @@ class MAB():
             return {'new_trial': False, 'choice': self.best(),
                     'best': self.best()}
         else:
-            # TODO: implement choice via strategy
-            print('slots: online trial strategy not yet implemented.'
-                  ' No trial run.')
-            # choice = self.run(trial=1)
-            pass
+            return {'new_trial': True,
+                    'choice': self.run_strategy(strategy, parameters),
+                    'best': self.best()}
 
     def update(self, bandit=None, payout=None):
         '''
