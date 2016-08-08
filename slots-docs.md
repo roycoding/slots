@@ -1,6 +1,10 @@
-#Multi-armed bandit library notes
+# slots
+## Multi-armed bandit library in Python
 
-### What does the library need to do?
+## Documentation
+This documents details the current and planned API for slots. Non-implemented features are noted as such.
+
+### What does the library need to do? An aspirational list.
 1. Set up N bandits with probabilities, p_i, and payouts, pay_i.
 2. Implement several MAB strategies, with kwargs as parameters, and consistent API.
 3. Allow for T trials.
@@ -10,7 +14,8 @@
     2. number of trials completed for each arm
     3. scores for each arm
     4. average payout per arm (payout*wins/trials?)
-    5. Current regret.  Regret = Trials*mean_max - sum^T_t=1(reward_t) See [ref](https://www.princeton.edu/~sbubeck/SurveyBCB12.pdf)
+    5. Current regret.  Regret = Trials*mean_max - sum^T_t=1(reward_t)
+        - See [ref](http://research.microsoft.com/en-us/um/people/sebubeck/SurveyBCB12.pdf)
 6. Use sane defaults.
 7. Be obvious and clean.
 
@@ -32,20 +37,21 @@ mab = slots.MAB(payouts = [1,10,15])
 
 # Bandits with payouts specified by arrays (i.e. payout data with unknown probabilities)
 # payouts is an N * T array, with N bandits and T trials
+# (Partially implemented)
 mab = slots.MAB(live = True, payouts = [[0,0,0,0,1.2,0,0],[0,0.1,0,0,0.1,0.1,0]]
 ```
 
 Running tests with strategy, S
 
 ```Python
-# Default: Epsilon-greedy, epsilon = 0.1, num_trials = 1000
+# Default: Epsilon-greedy, epsilon = 0.1, num_trials = 100
 mab.run()
 
-# Run chosen strategy with specified parameters and trials
-mab.eps_greedy(eps = 0.2, trials = 10000)
+# Run chosen strategy with specified parameters and number of trials
 mab.run(strategy = 'eps_greedy',params = {'eps':0.2}, trials = 10000)
 
 # Run strategy, updating old trial data
+# (NOT YET IMPLEMENTED)
 mab.run(continue = True)
 ```
 
@@ -53,9 +59,11 @@ Displaying / retrieving bandit properties
 
 ```Python
 # Default: display number of bandits, probabilities and payouts
+# (NOT YET IMPLEMENTED)
 mab.bandits.info()
 
 # Display info for bandit i
+# (NOT YET IMPLEMENTED)
 mab.bandits[i]
 
 # Retrieve bandits' payouts, probabilities, etc
@@ -63,6 +71,7 @@ mab.bandits.payouts
 mab.bandits.probs
 
 # Retrieve count of bandits
+# (NOT YET IMPLEMENTED)
 mab.bandits.count
 ```
 
@@ -70,9 +79,11 @@ Setting bandit properties
 
 ```Python
 # Reset bandits to defaults
+# (NOT YET IMPLEMENTED)
 mab.bandits.reset()
 
 # Set probabilities or payouts
+# (NOT YET IMPLEMENTED)
 mab.bandits.probs_set([0.1,0.05,0.2,0.15])
 mab.bandits.payouts_set([1,1.5,0.5,0.8])
 ```
@@ -84,33 +95,38 @@ Displaying / retrieving test info
 mab.best()
 
 # Retrieve bandit probability estimates
+# (NOT YET IMPLEMENTED)
 mab.prob_est()
 
 # Retrieve bandit probability estimate of bandit i
+# (NOT YET IMPLEMENTED)
 mab.prob_est(i)
 
 # Retrieve bandit payout estimates (p * payout)
-mab.payout_est()
+mab.est_payout()
 
 # Retrieve current bandit choice
+# (NOT YET IMPLEMENTED, use mab.choices[-1])
 mab.current()
 
 # Retrieve sequence of choices
 mab.choices
 
-# Retrieve probabilty estimate history
+# Retrieve probability estimate history
+# (NOT YET IMPLEMENTED)
 mab.prob_est_sequence
 
 # Retrieve test strategy info (current strategy) -- a dict
+# (NOT YET IMPLEMENTED)
 mab.strategy_info()
 ```
 
 ###Proposed MAB strategies
-1. Epsilon-greedy
-2. Epsilon decreasing
-3. Softmax
-4. Softmax decreasing
-5. Upper credible bound
+- [x] Epsilon-greedy
+- [ ] Epsilon decreasing
+- [x] Softmax
+- [ ] Softmax decreasing
+- [x] Upper credible bound
 
 ###Example: Running slots with a live website
 ```Python
