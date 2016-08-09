@@ -18,7 +18,7 @@ Scenarios:
 import numpy as np
 
 
-class MAB():
+class MAB(object):
     '''
     Multi-armed bandit test class.
     '''
