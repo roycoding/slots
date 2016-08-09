@@ -106,7 +106,7 @@ plt.ylim(0,0.2);
 ![](./misc/regret_plot.png)
 
 ### API documentation
-For documentation on the slots API, see [slots-docs.md](https://github.com/roycoding/slots/blob/master/slots-docs.md).
+For documentation on the slots API, see [slots-docs.md](https://github.com/roycoding/slots/blob/master/docs/slots-docs.md).
 
 
 ### Todo list:
