@@ -25,7 +25,7 @@ b.run()
 
 To inspect the results and compare the estimated win probabilities versus the true win probabilities:
 ```Python
-b.best
+b.best()
 > 0
 
 # Assuming payout of 1.0 for all "wins"
