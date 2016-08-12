@@ -23,33 +23,23 @@ class MAB(object):
     Multi-armed bandit test class.
     '''
 
-    def __init__(self, num_bandits=None, probs=None, payouts=None, live=False,
+    def __init__(self, num_bandits=3, probs=None, payouts=None, live=False,
                  stop_criterion={'criterion': 'regret', 'value': 1.0}):
         '''
-        Instantiate MAB class, determining
-            - Number of bandits
-            - Probabilities of bandit payouts
-            - Bandit payouts
-
-        Parameters (optional):
-            - Number of bandits (used alone) - integer
-            - Probabilities of bandit payouts - array of floats
-            - Amount of bandit payouts
-                - array of floats
-                - If 'live' = True, a N*T array of floats indication payout
-                    amount per pull for N bandits and T trials
-            - Boolean indicating if data is live
-            - Dict listing name of stopping criterion and threshold value.
+        :param: num_bandits (int), default is 3
+        :param: probs (np.array of floats), probability of payouts 
+        :param: payouts (np.array of floats) 
+        :param: live (bool). If 'live' = True, return an N*T array of payout
+                             amount per pull (floats) for N bandits and T trials
+            
+        :param: stop_criterion (dict). Options for stopping criterion 
+                and threshold value.
         '''
-
-        default_num_bandits = 3
 
         self.choices = []
 
         if not probs:
             if payouts is None:
-                if not num_bandits:
-                    num_bandits = default_num_bandits
                 self.bandits = Bandits(probs=[np.random.rand() for x in
                                        range(num_bandits)],
                                        payouts=np.ones(num_bandits))
@@ -77,13 +67,8 @@ class MAB(object):
 
         # Set the stopping criteria
         self.criteria = {'regret': self.regret_met}
-        if stop_criterion.get('criterion') in self.criteria:
-            self.criterion = stop_criterion['criterion']
-            if stop_criterion.get('value'):
-                self.stop_value = stop_criterion['value']
-        else:
-            self.criterion = 'regret'
-            self.stop_value = 0.1
+        self.criterion = stop_criterion.get('criterion', 'regret')
+        self.stop_value = stop_criterion.get('value', 0.1)
 
         # Bandit selection strategies
         self.strategies = ['eps_greedy', 'softmax', 'ucb']
@@ -92,10 +77,9 @@ class MAB(object):
         '''
         Run MAB test with T trials.
 
-        Parameters:
-            trials (integer) - number of trials to run.
-            strategy (string) - name of selected strategy.
-            parameters (dict) - parameters for selected strategy.
+        :param: trials (int) - number of trials to run.
+        :param: strategy (str) - name of selected strategy.
+        :param: parameters (dict) - parameters for selected strategy.
 
         Available strategies:
             - Epsilon-greedy ("eps_greedy")
@@ -120,12 +104,9 @@ class MAB(object):
         '''
         Run single trial of MAB strategy.
 
-        Input:
-            stategy - function
-            parameters - dictionary
+        :param: strategy (function)
+        :param: parameters (dictionary)
 
-        Output:
-            None
         '''
 
         choice = self.run_strategy(strategy, parameters)
@@ -142,12 +123,12 @@ class MAB(object):
         '''
         Run the selected strategy and retrun bandit choice.
 
-        Input:
-            strategy - string of strategy name
-            parameters - dict of strategy function parameters
+        
+        :param: strategy (str)
+        :param: parameters (dict) of strategy function parameters
 
-        Output:
-            integer. Call strategy function, which returns bandit arm choice.
+        :return: bandit arm choice (int)
+
         '''
 
         return self.__getattribute__(strategy)(params=parameters)
@@ -157,18 +138,17 @@ class MAB(object):
         """
         Pick the bandit with the current best observed proportion of winning.
 
-        Input: self
-        Output: int (index of chosen bandit)
+        :return: index of chosen bandit (int)
         """
 
         return np.argmax(self.wins / (self.pulls + 0.1))
 
     def eps_greedy(self, params):
         '''
-        Run the epsilon-greedy MAB algorithm.
+        Run the epsilon-greedy strategy and update self.max_mean()
 
-        Input: dict of parameters (epsilon)
-        Output: None
+        :param: params (dict) - epsilon
+        
         '''
 
         if params and type(params) == dict:
@@ -186,10 +166,10 @@ class MAB(object):
 
     def softmax(self, params):
         '''
-        Run the softmax selection algorithm.
+        Run the softmax selection strategy.
 
-        Input: dict of parameters (tau)
-        Output: int (index of chosen bandit)
+        :param: params (dict) - tau
+        :return: index of chosen bandit (int)
         '''
 
         default_tau = 0.1
@@ -232,10 +212,9 @@ class MAB(object):
 
     def ucb(self, params=None):
         '''
-        Run the upper credible bound MAB selection algorithm.
+        Run the upper credible bound MAB selection strategy.
 
-        Input: None (doesn't need parameters)
-        Output: int (index of chosen bandit)
+        :return: index of chosen bandit (int)
         '''
 
         # UBC = j_max(payout_j + sqrt(2ln(n_tot)/n_j))
@@ -256,8 +235,7 @@ class MAB(object):
         '''
         Return current 'best' choice of bandit.
 
-        Input: self
-        Output: integer
+        :return: index of bandit (int)
         '''
 
         if len(self.choices) < 1:
@@ -270,8 +248,7 @@ class MAB(object):
         '''
         Calculate current estimate of average payout for each bandit.
 
-        Input: Self
-        Output: list of floats
+        :return: list of floats
         '''
 
         if len(self.choices) < 1:
@@ -282,12 +259,12 @@ class MAB(object):
 
     def regret(self):
         '''
-        Calculate expected regret, where expected regret is
+        Calculate expected regret, where expected regret is 
+        maximum optimal reward - sum of collected rewards, i.e.
 
         expected regret = T*max_k(mean_k) - sum_(t=1-->T) (reward_t)
 
-        Input: None
-        Output: float
+        :return: regret (float)
         '''
 
         return (sum(self.pulls)*np.max(np.nan_to_num(self.wins/self.pulls)) -
@@ -297,7 +274,7 @@ class MAB(object):
         '''
         Determine if stopping criterion has been met.
 
-        Output: Boolean
+        :return: bool
         '''
 
         return self.criteria[self.criterion](self.stop_value)
@@ -306,8 +283,8 @@ class MAB(object):
         '''
         Determine if regret criterion has been met.
 
-        Input: float (threshold)
-        Output: Boolean
+        :param: threshold (float)
+        :return: bool
         '''
 
         if not threshold:
