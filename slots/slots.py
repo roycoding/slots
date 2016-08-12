@@ -86,7 +86,7 @@ class MAB(object):
             self.stop_value = 0.1
 
         # Bandit selection strategies
-        self.strategies = ['eps_greedy', 'softmax', 'ucb']
+        self.strategies = ['eps_greedy', 'softmax', 'ucb', 'bayesian_bandit']
 
     def run(self, trials=100, strategy=None, parameters=None):
         '''
@@ -162,6 +162,15 @@ class MAB(object):
         """
 
         return np.argmax(self.wins / (self.pulls + 0.1))
+
+    def bayesian_bandit(self, params):
+        '''
+        Run the Bayesian Bandit algorithm which utilizes a beta distribution for exploration and exploitation.
+        :param params:
+        :return:
+        '''
+        p_success_arms = [np.random.beta(self.wins[i] + 1, self.pulls[i] - self.wins[i] + 1) for i in range(len(self.wins))]
+        return np.array(p_success_arms).argmax()
 
     def eps_greedy(self, params):
         '''

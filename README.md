@@ -75,11 +75,13 @@ probs = [0.4, 0.9, 0.8]
 ba = slots.MAB(probs=probs)
 bb = slots.MAB(probs=probs)
 bc = slots.MAB(probs=probs)
+bd = slots.MAB(probs=probs)
 
 # Run trials and calculate the regret after each trial
 rega = []
 regb = []
 regc = []
+regd = []
 for t in range(10000):
     ba._run('eps_greedy')
     rega.append(ba.regret())
@@ -87,6 +89,8 @@ for t in range(10000):
     regb.append(bb.regret())
     bc._run('ucb')
     regc.append(bc.regret())
+    bd._run('bayesian_bandit')
+    regd.append(bd.regret())
 
 
 # Pretty plotting
@@ -97,6 +101,7 @@ plt.figure(figsize=(15,4))
 plt.plot(rega, label='$\epsilon$-greedy ($\epsilon$=0.1)')
 plt.plot(regb, label='Softmax ($T$=0.1)')
 plt.plot(regc, label='UCB')
+plt.plot(regd, label='Bayesian Bandit')
 plt.legend()
 plt.xlabel('Trials')
 plt.ylabel('Regret')
