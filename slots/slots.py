@@ -26,14 +26,18 @@ class MAB(object):
     def __init__(self, num_bandits=3, probs=None, payouts=None, live=False,
                  stop_criterion={'criterion': 'regret', 'value': 1.0}):
         '''
-        :param: num_bandits (int), default is 3
-        :param: probs (np.array of floats), probability of payouts 
-        :param: payouts (np.array of floats) 
-        :param: live (bool). If 'live' = True, return an N*T array of payout
-                             amount per pull (floats) for N bandits and T trials
-            
-        :param: stop_criterion (dict). Options for stopping criterion 
-                and threshold value.
+        Parameters
+        ----------
+        num_bandits : int
+            default is 3
+        probs : np.array of floats
+            payout probabilities
+        payouts : np.array of floats
+            If `live` is True, `payouts` should be an N*T array of payout
+            amount per pull (floats) for N bandits and T trials
+        live : bool
+        stop_criterion : dict
+            Stopping criterion (str) and threshold value (float).
         '''
 
         self.choices = []
@@ -77,14 +81,23 @@ class MAB(object):
         '''
         Run MAB test with T trials.
 
-        :param: trials (int) - number of trials to run.
-        :param: strategy (str) - name of selected strategy.
-        :param: parameters (dict) - parameters for selected strategy.
+        Parameters
+        ----------
+        trials : int
+            Number of trials to run.
+        strategy : str
+            Name of selected strategy.
+        parameters : dict
+            Parameters for selected strategy.
 
         Available strategies:
             - Epsilon-greedy ("eps_greedy")
             - Softmax ("softmax")
-            - Upper credibility bound ("ucb")
+            - Upper confidence bound ("ucb")
+
+        Returns
+        -------
+        None
         '''
 
         if trials < 1:
@@ -104,9 +117,14 @@ class MAB(object):
         '''
         Run single trial of MAB strategy.
 
-        :param: strategy (function)
-        :param: parameters (dictionary)
+        Parameters
+        ----------
+        strategy : function
+        parameters : dict
 
+        Returns
+        -------
+        None
         '''
 
         choice = self.run_strategy(strategy, parameters)
@@ -123,12 +141,17 @@ class MAB(object):
         '''
         Run the selected strategy and retrun bandit choice.
 
-        
-        :param: strategy (str)
-        :param: parameters (dict) of strategy function parameters
+        Parameters
+        ----------
+        strategy : str
+            Name of MAB strategy.
+        parameters : dict
+            Strategy function parameters
 
-        :return: bandit arm choice (int)
-
+        Returns
+        -------
+        int
+            Bandit arm choice index
         '''
 
         return self.__getattribute__(strategy)(params=parameters)
@@ -138,7 +161,10 @@ class MAB(object):
         """
         Pick the bandit with the current best observed proportion of winning.
 
-        :return: index of chosen bandit (int)
+        Returns
+        -------
+        int
+            Index of chosen bandit
         """
 
         return np.argmax(self.wins / (self.pulls + 0.1))
@@ -147,8 +173,15 @@ class MAB(object):
         '''
         Run the epsilon-greedy strategy and update self.max_mean()
 
-        :param: params (dict) - epsilon
-        
+        Parameters
+        ----------
+        Params : dict
+            Epsilon
+
+        Returns
+        -------
+        int
+            Index of chosen bandit
         '''
 
         if params and type(params) == dict:
@@ -168,8 +201,15 @@ class MAB(object):
         '''
         Run the softmax selection strategy.
 
-        :param: params (dict) - tau
-        :return: index of chosen bandit (int)
+        Parameters
+        ----------
+        Params : dict
+            Tau
+
+        Returns
+        -------
+        int
+            Index of chosen bandit
         '''
 
         default_tau = 0.1
@@ -212,12 +252,24 @@ class MAB(object):
 
     def ucb(self, params=None):
         '''
-        Run the upper credible bound MAB selection strategy.
+        Run the upper confidence bound MAB selection strategy.
 
-        :return: index of chosen bandit (int)
+        This is the UCB1 algorithm described in
+        https://homes.di.unimi.it/~cesabian/Pubblicazioni/ml-02.pdf
+
+        Parameters
+        ----------
+        params : None
+            For API consistency, this function can take a parameters argument,
+            but it is ignored.
+
+        Returns
+        -------
+        int
+            Index of chosen bandit
         '''
 
-        # UBC = j_max(payout_j + sqrt(2ln(n_tot)/n_j))
+        # UCB = j_max(payout_j + sqrt(2ln(n_tot)/n_j))
 
         # Handle cold start. Not all bandits tested yet.
         if True in (self.pulls < 3):
@@ -235,7 +287,10 @@ class MAB(object):
         '''
         Return current 'best' choice of bandit.
 
-        :return: index of bandit (int)
+        Returns
+        -------
+        int
+            Index of bandit
         '''
 
         if len(self.choices) < 1:
@@ -248,7 +303,9 @@ class MAB(object):
         '''
         Calculate current estimate of average payout for each bandit.
 
-        :return: list of floats
+        Returns
+        -------
+        array of floats or None
         '''
 
         if len(self.choices) < 1:
@@ -259,12 +316,14 @@ class MAB(object):
 
     def regret(self):
         '''
-        Calculate expected regret, where expected regret is 
+        Calculate expected regret, where expected regret is
         maximum optimal reward - sum of collected rewards, i.e.
 
         expected regret = T*max_k(mean_k) - sum_(t=1-->T) (reward_t)
 
-        :return: regret (float)
+        Returns
+        -------
+        float
         '''
 
         return (sum(self.pulls)*np.max(np.nan_to_num(self.wins/self.pulls)) -
@@ -274,7 +333,9 @@ class MAB(object):
         '''
         Determine if stopping criterion has been met.
 
-        :return: bool
+        Returns
+        -------
+        bool
         '''
 
         return self.criteria[self.criterion](self.stop_value)
@@ -283,8 +344,13 @@ class MAB(object):
         '''
         Determine if regret criterion has been met.
 
-        :param: threshold (float)
-        :return: bool
+        Parameters
+        ----------
+        threshold : float
+
+        Returns
+        -------
+        bool
         '''
 
         if not threshold:
@@ -303,14 +369,21 @@ class MAB(object):
             met, return the best arm estimate. Otherwise return the next arm to
             try.
 
-        Input:
-            bandit - int of bandit index
-            payout - float of payout value
-            strategy - string name of update strategy
-            parameters - dict of parameters for update strategy function
+        Parameters
+        ----------
+        bandit : int
+            Bandit index
+        payout : float
+            Payout value
+        strategy : string
+            Name of update strategy
+        parameters : dict
+            Parameters for update strategy function
 
-        Output:
-            dict - format: {'new_trial': boolean, 'choice': int, 'best': int}
+        Returns
+        -------
+        dict
+            Format: {'new_trial': boolean, 'choice': int, 'best': int}
         '''
 
         if bandit and payout:
@@ -331,7 +404,15 @@ class MAB(object):
         '''
         Update bandit trials and payouts for given bandit.
 
-        Input: int (bandit number), float (bandit's payout)
+        Parameters
+        ----------
+        bandit : int
+            Bandit index
+        payout : float
+
+        Returns
+        -------
+        None
         '''
 
         self.pulls[bandit] += 1
@@ -350,13 +431,15 @@ class Bandits():
             - Probabilities of bandit payouts
             - Bandit payouts
 
-        Parameters:
-            - Probabilities of bandit payouts - array of floats
-            - Amount of bandit payouts
-                - array of floats
-                - If 'live' = True, a N*T array of floats indication payout
-                    amount per pull for N bandits and T trials
-            - Boolean indicating if data is live
+        Parameters
+        ----------
+        probs: array of floats
+            Probabilities of bandit payouts
+        payouts : array of floats
+            Amount of bandit payouts. If `live` is True, `payouts` should be an
+            N*T array of floats giving the payout amount per pull for N bandits
+            and T trials.
+        live : bool
         '''
 
         if not live:
@@ -375,6 +458,15 @@ class Bandits():
     def pull(self, i):
         '''
         Return the payout from a single pull of the bandit i's arm.
+
+        Parameters
+        ----------
+        i : int
+            Index of bandit.
+
+        Returns
+        -------
+        float or None
         '''
 
         if self.live:
