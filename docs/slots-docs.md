@@ -127,6 +127,7 @@ mab.strategy_info()
 - [x] Softmax
 - [ ] Softmax decreasing
 - [x] Upper credible bound
+- [x] Bayesian bandits
 
 ###Example: Running slots with a live website
 ```Python

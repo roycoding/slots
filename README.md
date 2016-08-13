@@ -89,7 +89,7 @@ for t in range(10000):
     regb.append(bb.regret())
     bc._run('ucb')
     regc.append(bc.regret())
-    bd._run('bayesian_bandit')
+    bd._run('bayesian')
     regd.append(bd.regret())
 
 
@@ -116,6 +116,5 @@ For documentation on the slots API, see [slots-docs.md](https://github.com/royco
 
 ### Todo list:
 - More MAB strategies
-  - Bayesian bandits
 - Argument to save regret values after each trial in an array.
 - TESTS!
