@@ -57,7 +57,7 @@ Where:
 - `choice` is the current choice of arm to try.
 - `best` is the current best estimate of the highest payout arm.
 
-By default, slots uses the epsilon greedy strategy. Besides epsilon greedy, the softmax and upper credibility bound strategies are also implemented.
+By default, slots uses the epsilon greedy strategy. Besides epsilon greedy, the softmax, upper confidence bound, and Bayesian bandit strategies are also implemented.
 
 #### Regret analysis
 A common metric used to evaluate the relative success of a MAB strategy is "regret". This reflects that fraction of payouts (wins) that have been lost by using the sequence of pulls versus the currently best known arm. The current regret value can be calculated by calling the `mab.regret()` method.
