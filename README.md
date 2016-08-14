@@ -72,36 +72,34 @@ import slots
 # Test multiple strategies for the same bandit probabilities
 probs = [0.4, 0.9, 0.8]
 
-ba = slots.MAB(probs=probs)
-bb = slots.MAB(probs=probs)
-bc = slots.MAB(probs=probs)
-bd = slots.MAB(probs=probs)
+strategies = [{'strategy': 'eps_greedy', 'regret': [],
+               'label': '$\epsilon$-greedy ($\epsilon$=0.1)'},
+              {'strategy': 'softmax', 'regret': [],
+               'label': 'Softmax ($T$=0.1)'},
+              {'strategy': 'ucb', 'regret': [],
+               'label': 'UCB1'},
+              {'strategy': 'bayesian', 'regret': [],
+               'label': 'Bayesian bandit'},
+              ]
+
+for s in strategies:
+ s['mab'] = slots.MAB(probs=probs)
 
 # Run trials and calculate the regret after each trial
-rega = []
-regb = []
-regc = []
-regd = []
 for t in range(10000):
-    ba._run('eps_greedy')
-    rega.append(ba.regret())
-    bb._run('softmax')
-    regb.append(bb.regret())
-    bc._run('ucb')
-    regc.append(bc.regret())
-    bd._run('bayesian')
-    regd.append(bd.regret())
-
+    for s in strategies:
+        s['mab']._run(s['strategy'])
+        s['regret'].append(s['mab'].regret())
 
 # Pretty plotting
 sns.set_style('whitegrid')
 sns.set_context('poster')
 
 plt.figure(figsize=(15,4))
-plt.plot(rega, label='$\epsilon$-greedy ($\epsilon$=0.1)')
-plt.plot(regb, label='Softmax ($T$=0.1)')
-plt.plot(regc, label='UCB')
-plt.plot(regd, label='Bayesian Bandit')
+
+for s in strategies:
+    plt.plot(s['regret'], label=s['label'])
+
 plt.legend()
 plt.xlabel('Trials')
 plt.ylabel('Regret')
