@@ -23,8 +23,8 @@ class MAB(object):
     Multi-armed bandit test class.
     '''
 
-    def __init__(self, num_bandits=3, probs=None, payouts=None, live=False,
-                 stop_criterion={'criterion': 'regret', 'value': 1.0}):
+    def __init__(self, num_bandits=3, probs=None, payouts=None, live=True,
+                 stop_criterion={'criterion': 'regret', 'value': 0.1}):
         '''
         Parameters
         ----------
@@ -33,9 +33,9 @@ class MAB(object):
         probs : np.array of floats
             payout probabilities
         payouts : np.array of floats
-            If `live` is True, `payouts` should be an N*T array of payout
-            amount per pull (floats) for N bandits and T trials
+            If `live` is True, `payouts` should be None.
         live : bool
+            Whether the use is for a live, online trial.
         stop_criterion : dict
             Stopping criterion (str) and threshold value (float).
         '''
@@ -43,27 +43,32 @@ class MAB(object):
         self.choices = []
 
         if not probs:
-            if payouts is None:
-                self.bandits = Bandits(probs=[np.random.rand() for x in
-                                       range(num_bandits)],
-                                       payouts=np.ones(num_bandits))
-            else:
+            if not payouts:
                 if live:
-                    self.bandits = Bandits(live=True, payouts=payouts,
+                    self.bandits = Bandits(live=True,
+                                           payouts=np.zeros(num_bandits),
                                            probs=None)
                 else:
-                    # Not sure why anyone would do this
                     self.bandits = Bandits(probs=[np.random.rand() for x in
-                                           range(len(payouts))],
-                                           payouts=payouts)
+                                           range(num_bandits)],
+                                           payouts=np.ones(num_bandits),
+                                           live=False)
+            else:
+
+                self.bandits = Bandits(probs=[np.random.rand() for x in
+                                       range(len(payouts))],
+                                       payouts=payouts,
+                                       live=False)
                 num_bandits = len(payouts)
         else:
             if payouts:
-                self.bandits = Bandits(probs=probs, payouts=payouts)
+                self.bandits = Bandits(probs=probs, payouts=payouts,
+                                       live=False)
                 num_bandits = len(payouts)
             else:
                 self.bandits = Bandits(probs=probs,
-                                       payouts=np.ones(len(probs)))
+                                       payouts=np.ones(len(probs)),
+                                       live=False)
                 num_bandits = len(probs)
 
         self.wins = np.zeros(num_bandits)
@@ -361,7 +366,10 @@ class MAB(object):
         bool
         '''
 
-        return self.criteria[self.criterion](self.stop_value)
+        if True in (self.pulls < 3):
+            return False
+        else:
+            return self.criteria[self.criterion](self.stop_value)
 
     def regret_met(self, threshold=None):
         '''
@@ -409,7 +417,7 @@ class MAB(object):
             Format: {'new_trial': boolean, 'choice': int, 'best': int}
         '''
 
-        if bandit and payout:
+        if bandit is not None and payout is not None:
             self.update(bandit=bandit, payout=payout)
         else:
             raise Exception('slots.online_trial: bandit and/or payout value'
@@ -423,7 +431,7 @@ class MAB(object):
                     'choice': self.run_strategy(strategy, parameters),
                     'best': self.best()}
 
-    def update(self, bandit=None, payout=None):
+    def update(self, bandit, payout):
         '''
         Update bandit trials and payouts for given bandit.
 
@@ -438,6 +446,7 @@ class MAB(object):
         None
         '''
 
+        self.choices.append(bandit)
         self.pulls[bandit] += 1
         self.wins[bandit] += payout
         self.bandits.payouts[bandit] += payout
@@ -448,7 +457,7 @@ class Bandits():
     Bandit class.
     '''
 
-    def __init__(self, probs, payouts, live=False):
+    def __init__(self, probs, payouts, live=True):
         '''
         Instantiate Bandit class, determining
             - Probabilities of bandit payouts
@@ -460,8 +469,7 @@ class Bandits():
             Probabilities of bandit payouts
         payouts : array of floats
             Amount of bandit payouts. If `live` is True, `payouts` should be an
-            N*T array of floats giving the payout amount per pull for N bandits
-            and T trials.
+            N length array of zeros.
         live : bool
         '''
 
