@@ -15,11 +15,33 @@ slots is a Python library designed to allow the user to explore and use simple m
 
 slots provides a hopefully simple API to allow you to explore, test, and use these strategies. Basic usage looks like this:
 
+Using slots to determine the best of 3 variations on a live website.
 ```Python
 import slots
 
+mab = slots.MAB(3)
+```
+
+Make the first choice randomly, record responses, and input reward 2 was chosen. Run online trial (input most recent result) until test criteria is met.
+```Python
+mab.online_trial(bandit=2,payout=1)
+```
+
+The response of `mab.online_trial()` is a dict of the form:
+```Python
+{'new_trial': boolean, 'choice': int, 'best': int}
+```
+Where:
+- If the criterion is met, `new_trial` = `False`.
+- `choice` is the current choice of arm to try.
+- `best` is the current best estimate of the highest payout arm.
+
+
+To test strategies on arms with pre-set probabilities:
+
+```Python
 # Try 3 bandits with arbitrary win probabilities
-b = slots.MAB()
+b = slots.MAB(3, live=False)
 b.run()
 ```
 
@@ -36,28 +58,7 @@ b.bandits.probs
 > [0.8020877268854065, 0.7185844454955193, 0.16348877912363646]
 ```
 
-For "real world" (online) usage, test results can be sequentially fed into an `MAB` object. The tests will continue until a stopping criterion is met.
-
-Using slots to determine the best of 3 variations on a live website.
-```Python
-mab = slots.MAB(live=True, payouts=[]*3)
-```
-
-Make the first choice randomly, record responses, and input reward 2 was chosen. Run online trial (input most recent result) until test criteria is met.
-```Python
-mab.online_trial(bandit=2,payout=1)
-```
-
-The response of mab.online_trial() is a dict of the form:
-```Python
-{'new_trial': boolean, 'choice': int, 'best': int}
-```
-Where:
-- If the criterion is met, `new_trial` = `False`.
-- `choice` is the current choice of arm to try.
-- `best` is the current best estimate of the highest payout arm.
-
-By default, slots uses the epsilon greedy strategy. Besides epsilon greedy, the softmax, upper confidence bound, and Bayesian bandit strategies are also implemented.
+By default, slots uses the epsilon greedy strategy. Besides epsilon greedy, the softmax, upper confidence bound (UCB1), and Bayesian bandit strategies are also implemented.
 
 #### Regret analysis
 A common metric used to evaluate the relative success of a MAB strategy is "regret". This reflects that fraction of payouts (wins) that have been lost by using the sequence of pulls versus the currently best known arm. The current regret value can be calculated by calling the `mab.regret()` method.
@@ -83,7 +84,7 @@ strategies = [{'strategy': 'eps_greedy', 'regret': [],
               ]
 
 for s in strategies:
- s['mab'] = slots.MAB(probs=probs)
+ s['mab'] = slots.MAB(probs=probs, live=False)
 
 # Run trials and calculate the regret after each trial
 for t in range(10000):

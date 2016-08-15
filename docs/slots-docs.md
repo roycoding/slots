@@ -19,29 +19,43 @@ This documents details the current and planned API for slots. Non-implemented fe
 6. Use sane defaults.
 7. Be obvious and clean.
 
-###Library API ideas:
-Creating a MAB test instance:
+### Library API ideas:
+#### Running slots with a live website
+```Python
+# Using slots to determine the best of 3 variations on a live website. 3 is the default.
+mab = slots.MAB(3)
+
+# Make the first choice randomly, record responses, and input reward
+# 2 was chosen.
+# Run online trial (input most recent result) until test criteria is met.
+mab.online_trial(bandit=2,payout=1)
+
+# Repsonse of mab.online_trial() is a dict of the form:
+{'new_trial': boolean, 'choice': int, 'best': int}
+
+# Where:
+#   If the criterion is met, new_trial = False.
+#   choice is the current choice of arm to try.
+#   best is the current best estimate of the highest payout arm.
+```
+
+#### Creating a MAB test instance:
 
 ```Python
 # Default: 3 bandits with random p_i and pay_i = 1
-mab = slots.MAB()
+mab = slots.MAB(live=False)
 
 # Set up 4 bandits with random p_i and pay_i
-mab = slots.MAB(4)
+mab = slots.MAB(4, live=False)
 
 # 4 bandits with specified p_i
-mab = slots.MAB(probs = [0.2,0.1,0.4,0.1])
+mab = slots.MAB(probs = [0.2,0.1,0.4,0.1], live=False)
 
 # 3 bandits with specified pay_i
-mab = slots.MAB(payouts = [1,10,15])
-
-# Bandits with payouts specified by arrays (i.e. payout data with unknown probabilities)
-# payouts is an N * T array, with N bandits and T trials
-# (Partially implemented)
-mab = slots.MAB(live = True, payouts = [[0,0,0,0,1.2,0,0],[0,0.1,0,0,0.1,0.1,0]]
+mab = slots.MAB(payouts = [1,10,15], live=False)
 ```
 
-Running tests with strategy, S
+#### Running tests with strategy, S
 
 ```Python
 # Default: Epsilon-greedy, epsilon = 0.1, num_trials = 100
@@ -55,7 +69,7 @@ mab.run(strategy = 'eps_greedy',params = {'eps':0.2}, trials = 10000)
 mab.run(continue = True)
 ```
 
-Displaying / retrieving bandit properties
+#### Displaying / retrieving bandit properties
 
 ```Python
 # Default: display number of bandits, probabilities and payouts
@@ -75,7 +89,7 @@ mab.bandits.probs
 mab.bandits.count
 ```
 
-Setting bandit properties
+#### Setting bandit properties
 
 ```Python
 # Reset bandits to defaults
@@ -88,7 +102,7 @@ mab.bandits.probs_set([0.1,0.05,0.2,0.15])
 mab.bandits.payouts_set([1,1.5,0.5,0.8])
 ```
 
-Displaying / retrieving test info
+#### Displaying / retrieving test info
 
 ```Python
 # Retrieve current "best" bandit
@@ -121,29 +135,10 @@ mab.prob_est_sequence
 mab.strategy_info()
 ```
 
-###Proposed MAB strategies
+### Proposed MAB strategies
 - [x] Epsilon-greedy
 - [ ] Epsilon decreasing
 - [x] Softmax
 - [ ] Softmax decreasing
 - [x] Upper credible bound
 - [x] Bayesian bandits
-
-###Example: Running slots with a live website
-```Python
-# Using slots to determine the best of 3 variations on a live website.
-mab = slots.MAB(live=True, payouts=[]*3)
-
-# Make the first choice randomly, record responses, and input reward
-# 2 was chosen.
-# Run online trial (input most recent result) until test criteria is met.
-mab.online_trial(bandit=2,payout=1)
-
-# Repsonse of mab.online_trial() is a dict of the form:
-{'new_trial': boolean, 'choice': int, 'best': int}
-
-# Where:
-#   If the criterion is met, new_trial = False.
-#   choice is the current choice of arm to try.
-#   best is the current best estimate of the highest payout arm.
-```
