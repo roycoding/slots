@@ -50,13 +50,13 @@ class MAB(object):
                                            probs=None)
                 else:
                     self.bandits = Bandits(probs=[np.random.rand() for x in
-                                           range(num_bandits)],
+                                                  range(num_bandits)],
                                            payouts=np.ones(num_bandits),
                                            live=False)
             else:
 
                 self.bandits = Bandits(probs=[np.random.rand() for x in
-                                       range(len(payouts))],
+                                              range(len(payouts))],
                                        payouts=payouts,
                                        live=False)
                 num_bandits = len(payouts)
@@ -82,7 +82,7 @@ class MAB(object):
         # Bandit selection strategies
         self.strategies = ['eps_greedy', 'softmax', 'ucb', 'bayesian']
 
-    def run(self, trials=100, strategy=None, parameters=None):
+    def run(self, trials=100, strategy='eps_greedy', parameters=None):
         '''
         Run MAB test with T trials.
 
@@ -107,8 +107,8 @@ class MAB(object):
 
         if trials < 1:
             raise Exception('MAB.run: Number of trials cannot be less than 1!')
-        if not strategy:
-            strategy = 'eps_greedy'
+        # if not strategy:
+        #    strategy = 'eps_greedy'
         else:
             if strategy not in self.strategies:
                 raise Exception('MAB,run: Strategy name invalid. Choose from:'
@@ -193,7 +193,7 @@ class MAB(object):
         p_success_arms = [
             np.random.beta(self.wins[i] + 1, self.pulls[i] - self.wins[i] + 1)
             for i in range(len(self.wins))
-            ]
+        ]
 
         return np.array(p_success_arms).argmax()
 
@@ -221,7 +221,7 @@ class MAB(object):
 
         if r < eps:
             return np.random.choice(list(set(range(len(self.wins))) -
-                                    {self.max_mean()}))
+                                         {self.max_mean()}))
         else:
             return self.max_mean()
 
