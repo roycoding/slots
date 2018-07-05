@@ -107,8 +107,7 @@ class MAB(object):
 
         if trials < 1:
             raise Exception('MAB.run: Number of trials cannot be less than 1!')
-        # if not strategy:
-        #    strategy = 'eps_greedy'
+
         else:
             if strategy not in self.strategies:
                 raise Exception('MAB,run: Strategy name invalid. Choose from:'
