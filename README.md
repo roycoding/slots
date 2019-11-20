@@ -6,7 +6,7 @@ Slots is intended to be a basic, very easy-to-use multi-armed bandit library for
 #### Author
 [Roy Keyes](https://roycoding.github.io) -- roy.coding@gmail
 
-#### License: BSD
+#### License: MIT
 See [LICENSE.txt](https://github.com/roycoding/slots/blob/master/LICENSE.txt)
 
 
