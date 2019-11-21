@@ -2,6 +2,7 @@
 ### *A multi-armed bandit library for Python*
 
 Slots is intended to be a basic, very easy-to-use multi-armed bandit library for Python.
+
 [![PyPI](https://img.shields.io/pypi/v/slots)](https://pypi.org/project/slots/)
 [![Downloads](https://pepy.tech/badge/slots)](https://pepy.tech/project/slots)
 
