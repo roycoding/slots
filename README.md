@@ -4,6 +4,7 @@
 Slots is intended to be a basic, very easy-to-use multi-armed bandit library for Python.
 
 [![PyPI](https://img.shields.io/pypi/v/slots)](https://pypi.org/project/slots/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Downloads](https://pepy.tech/badge/slots)](https://pepy.tech/project/slots)
 
 #### Author
@@ -22,7 +23,7 @@ Using slots to determine the best of 3 variations on a live website.
 ```Python
 import slots
 
-mab = slots.MAB(3)
+mab = slots.MAB(3, live=True)
 ```
 
 Make the first choice randomly, record responses, and input reward 2 was chosen. Run online trial (input most recent result) until test criteria is met.
@@ -120,3 +121,12 @@ For documentation on the slots API, see [slots-docs.md](https://github.com/royco
 - More MAB strategies
 - Argument to save regret values after each trial in an array.
 - TESTS!
+
+### Contributing
+
+I welcome contributions, though the pace of development is highly variable. Please file issues and sumbit pull requests as makes sense.
+
+The current development environment uses:
+
+- pytest >= 5.3 (5.3.2)
+- black >= 19.1 (19.10b0)
