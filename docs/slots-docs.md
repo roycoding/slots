@@ -23,7 +23,7 @@ This documents details the current and planned API for slots. Non-implemented fe
 #### Running slots with a live website
 ```Python
 # Using slots to determine the best of 3 variations on a live website. 3 is the default.
-mab = slots.MAB(3)
+mab = slots.MAB(3, live=True)
 
 # Make the first choice randomly, record responses, and input reward
 # 2 was chosen.
