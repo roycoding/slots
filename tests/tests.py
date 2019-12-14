@@ -5,6 +5,3 @@ from slots.slots import MAB
 def test_mab():
     mab = MAB()
     mab.run()
-
-def test_run():
-    print('test')
