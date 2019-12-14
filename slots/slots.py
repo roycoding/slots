@@ -23,7 +23,7 @@ class MAB(object):
     Multi-armed bandit test class.
     '''
 
-    def __init__(self, num_bandits=3, probs=None, payouts=None, live=True,
+    def __init__(self, num_bandits=3, probs=None, payouts=None, live=False,
                  stop_criterion={'criterion': 'regret', 'value': 0.1}):
         '''
         Parameters
@@ -45,16 +45,21 @@ class MAB(object):
         if not probs:
             if not payouts:
                 if live:
+                    # Live trial scenario, where nothing is known except the
+                    # number of bandits
                     self.bandits = Bandits(live=True,
                                            payouts=np.zeros(num_bandits),
                                            probs=None)
                 else:
+                    # A pure experiment scenario with random probabilities
+                    # and single payout values are 1.
                     self.bandits = Bandits(probs=[np.random.rand() for x in
                                                   range(num_bandits)],
                                            payouts=np.ones(num_bandits),
                                            live=False)
             else:
-
+                # Run strategies on known historical sequence of payouts. Probabilities are not known.
+                print("slots: Cannot have a defined array of payouts and live=True. live set to False")
                 self.bandits = Bandits(probs=[np.random.rand() for x in
                                               range(len(payouts))],
                                        payouts=payouts,
@@ -62,10 +67,12 @@ class MAB(object):
                 num_bandits = len(payouts)
         else:
             if payouts:
+                # A pure experiment scenario with known probabilities and known single payout values.
                 self.bandits = Bandits(probs=probs, payouts=payouts,
                                        live=False)
                 num_bandits = len(payouts)
             else:
+                # A pure experiment scenario with known probabilities and single payout values of 1.
                 self.bandits = Bandits(probs=probs,
                                        payouts=np.ones(len(probs)),
                                        live=False)
@@ -91,7 +98,7 @@ class MAB(object):
         trials : int
             Number of trials to run.
         strategy : str
-            Name of selected strategy.
+            Name of selected strategy. "eps_greedy" is default.
         parameters : dict
             Parameters for selected strategy.
 
@@ -402,9 +409,9 @@ class MAB(object):
         Parameters
         ----------
         bandit : int
-            Bandit index
+            Bandit index of most recent trial
         payout : float
-            Payout value
+            Payout value of most recent trial
         strategy : string
             Name of update strategy
         parameters : dict
