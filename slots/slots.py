@@ -18,6 +18,7 @@ Scenarios:
         mab.online_trial(bandit=1, payout=0)
 """
 
+from typing import Optional, List, Dict, Any, Union
 
 import numpy as np
 
@@ -29,12 +30,12 @@ class MAB(object):
 
     def __init__(
         self,
-        num_bandits=3,
-        probs=None,
-        hist_payouts=None,
-        live=False,
-        stop_criterion={"criterion": "regret", "value": 0.1},
-    ):
+        num_bandits: Optional[int] = 3,
+        probs: Optional[np.ndarray] = None,
+        hist_payouts: Optional[List[np.ndarray]] = None,
+        live: bool = False,
+        stop_criterion: Optional[Dict] = {"criterion": "regret", "value": 0.1},
+    ) -> None:
         """
         Parameters
         ----------
@@ -51,7 +52,7 @@ class MAB(object):
             Stopping criterion (str) and threshold value (float).
         """
 
-        self.choices = []
+        self.choices: List[int] = []
 
         if not probs:
             if not hist_payouts:
@@ -87,7 +88,7 @@ class MAB(object):
                 print(
                     "slots: Since historical payout data has been supplied, probabilities will be ignored."
                 )
-                if len(probs) == len(payouts):
+                if len(probs) == len(hist_payouts):
                     self.bandits = Bandits(
                         hist_payouts=hist_payouts,
                         live=False,
@@ -104,18 +105,32 @@ class MAB(object):
                     probs=probs, payouts=np.zeros(num_bandits), live=False
                 )
 
-        self.wins = np.zeros(num_bandits)
-        self.pulls = np.zeros(num_bandits)
+        self.wins: np.ndarray = np.zeros(num_bandits)
+        self.pulls: np.ndarray = np.zeros(num_bandits)
 
         # Set the stopping criteria
-        self.criteria = {"regret": self.regret_met}
-        self.criterion = stop_criterion.get("criterion", "regret")
-        self.stop_value = stop_criterion.get("value", 0.1)
+        self.criteria: Dict = {"regret": self.regret_met}
+        if not stop_criterion:
+            self.criterion: str = "regret"
+            self.stop_value: float = 0.1
+        else:
+            self.criterion = stop_criterion.get("criterion", "regret")
+            self.stop_value = stop_criterion.get("value", 0.1)
 
         # Bandit selection strategies
-        self.strategies = ["eps_greedy", "softmax", "ucb", "bayesian"]
+        self.strategies: List[str] = [
+            "eps_greedy",
+            "softmax",
+            "ucb",
+            "bayesian",
+        ]
 
-    def run(self, trials=100, strategy="eps_greedy", parameters=None):
+    def run(
+        self,
+        trials: int = 100,
+        strategy: str = "eps_greedy",
+        parameters: Optional[Dict] = None,
+    ) -> None:
         """
         Run MAB test with T trials.
 
@@ -154,13 +169,13 @@ class MAB(object):
         for n in range(trials):
             self._run(strategy, parameters)
 
-    def _run(self, strategy, parameters=None):
+    def _run(self, strategy: str, parameters: Optional[Dict] = None) -> None:
         """
         Run single trial of MAB strategy.
 
         Parameters
         ----------
-        strategy : function
+        strategy : str
         parameters : dict
 
         Returns
@@ -168,9 +183,9 @@ class MAB(object):
         None
         """
 
-        choice = self.run_strategy(strategy, parameters)
+        choice: int = self.run_strategy(strategy, parameters)
         self.choices.append(choice)
-        payout = self.bandits.pull(choice)
+        payout: Optional[int] = self.bandits.pull(choice)
         if payout is None:
             print("Trials exhausted. No more values for bandit", choice)
             return None
@@ -178,7 +193,9 @@ class MAB(object):
             self.wins[choice] += payout
         self.pulls[choice] += 1
 
-    def run_strategy(self, strategy, parameters):
+    def run_strategy(
+        self, strategy: str, parameters: Optional[Dict] = None
+    ) -> int:
         """
         Run the selected strategy and retrun bandit choice.
 
@@ -198,7 +215,7 @@ class MAB(object):
         return self.__getattribute__(strategy)(params=parameters)
 
     # ###### ----------- MAB strategies ---------------------------------------####
-    def max_mean(self):
+    def max_mean(self) -> int:
         """
         Pick the bandit with the current best observed proportion of winning.
 
@@ -210,7 +227,7 @@ class MAB(object):
 
         return np.argmax(self.wins / (self.pulls + 0.1))
 
-    def bayesian(self, params=None):
+    def bayesian(self, params: Any = None) -> int:
         """
         Run the Bayesian Bandit algorithm which utilizes a beta distribution
         for exploration and exploitation.
@@ -233,7 +250,7 @@ class MAB(object):
 
         return np.array(p_success_arms).argmax()
 
-    def eps_greedy(self, params):
+    def eps_greedy(self, params: Optional[Dict] = None) -> int:
         """
         Run the epsilon-greedy strategy and update self.max_mean()
 
@@ -262,7 +279,7 @@ class MAB(object):
         else:
             return self.max_mean()
 
-    def softmax(self, params):
+    def softmax(self, params: Optional[Dict] = None) -> int:
         """
         Run the softmax selection strategy.
 
@@ -277,10 +294,10 @@ class MAB(object):
             Index of chosen bandit
         """
 
-        default_tau = 0.1
+        default_tau: float = 0.1
 
         if params and type(params) == dict:
-            tau = params.get("tau")
+            tau: float = params.get("tau", default_tau)
             try:
                 float(tau)
             except ValueError:
@@ -293,19 +310,19 @@ class MAB(object):
         if True in (self.pulls < 3):
             return np.random.choice(range(len(self.pulls)))
         else:
-            payouts = self.wins / (self.pulls + 0.1)
-            norm = sum(np.exp(payouts / tau))
+            payouts: np.ndarray = self.wins / (self.pulls + 0.1)
+            norm: float = sum(np.exp(payouts / tau))
 
-        ps = np.exp(payouts / tau) / norm
+        ps: np.ndarray = np.exp(payouts / tau) / norm
 
         # Randomly choose index based on CMF
-        cmf = [sum(ps[: i + 1]) for i in range(len(ps))]
+        cmf: List[int] = [sum(ps[: i + 1]) for i in range(len(ps))]
 
-        rand = np.random.rand()
+        rand: float = np.random.rand()
 
-        found = False
-        found_i = None
-        i = 0
+        found: bool = False
+        found_i: int = 0
+        i: int = 0
         while not found:
             if rand < cmf[i]:
                 found_i = i
@@ -315,7 +332,7 @@ class MAB(object):
 
         return found_i
 
-    def ucb(self, params=None):
+    def ucb(self, params: Optional[Dict] = None) -> int:
         """
         Run the upper confidence bound MAB selection strategy.
 
@@ -340,15 +357,17 @@ class MAB(object):
         if True in (self.pulls < 3):
             return np.random.choice(range(len(self.pulls)))
         else:
-            n_tot = sum(self.pulls)
-            payouts = self.wins / (self.pulls + 0.1)
-            ubcs = payouts + np.sqrt(2 * np.log(n_tot) / self.pulls)
+            n_tot: int = sum(self.pulls)
+            payouts: np.ndarray = self.wins / (self.pulls + 0.1)
+            ubcs: np.ndarray = payouts + np.sqrt(
+                2 * np.log(n_tot) / self.pulls
+            )
 
             return np.argmax(ubcs)
 
     # ###------------------------------------------------------------------####
 
-    def best(self):
+    def best(self) -> Optional[int]:
         """
         Return current 'best' choice of bandit.
 
@@ -364,7 +383,7 @@ class MAB(object):
         else:
             return np.argmax(self.wins / (self.pulls + 0.1))
 
-    def est_probs(self):
+    def est_probs(self) -> Optional[np.ndarray]:
         """
         Calculate current estimate of average payout for each bandit.
 
@@ -379,7 +398,7 @@ class MAB(object):
         else:
             return self.wins / (self.pulls + 0.1)
 
-    def regret(self):
+    def regret(self) -> float:
         """
         Calculate expected regret, where expected regret is
         maximum optimal reward - sum of collected rewards, i.e.
@@ -396,7 +415,7 @@ class MAB(object):
             - sum(self.wins)
         ) / sum(self.pulls)
 
-    def crit_met(self):
+    def crit_met(self) -> bool:
         """
         Determine if stopping criterion has been met.
 
@@ -410,7 +429,7 @@ class MAB(object):
         else:
             return self.criteria[self.criterion](self.stop_value)
 
-    def regret_met(self, threshold=None):
+    def regret_met(self, threshold: Optional[float] = None) -> bool:
         """
         Determine if regret criterion has been met.
 
@@ -432,8 +451,12 @@ class MAB(object):
 
     # ## ------------ Online bandit testing ------------------------------ ####
     def online_trial(
-        self, bandit=None, payout=None, strategy="eps_greedy", parameters=None
-    ):
+        self,
+        bandit: Optional[int] = None,
+        payout: Optional[int] = None,
+        strategy: str = "eps_greedy",
+        parameters: Optional[Dict] = None,
+    ) -> Dict:
         """
         Update the bandits with the results of the previous live, online trial.
             Next run a the selection algorithm. If the stopping criteria is
@@ -444,7 +467,7 @@ class MAB(object):
         ----------
         bandit : int
             Bandit index of most recent trial
-        payout : float
+        payout : int
             Payout value of most recent trial
         strategy : string
             Name of update strategy
@@ -477,7 +500,7 @@ class MAB(object):
                 "best": self.best(),
             }
 
-    def update(self, bandit, payout):
+    def update(self, bandit, payout) -> None:
         """
         Update bandit trials and payouts for given bandit.
 
@@ -503,7 +526,13 @@ class Bandits:
     Bandit class.
     """
 
-    def __init__(self, payouts, probs=None, hist_payouts=None, live=False):
+    def __init__(
+        self,
+        payouts: np.ndarray,
+        probs: Optional[np.ndarray] = None,
+        hist_payouts: Optional[List[np.ndarray]] = None,
+        live: bool = False,
+    ):
         """
         Instantiate Bandit class, determining
             - Probabilities of bandit payouts
@@ -521,16 +550,16 @@ class Bandits:
         """
 
         if not live:
-            self.probs = probs
-            self.payouts = payouts
-            self.hist_payouts = hist_payouts
-            self.live = False
+            self.probs: Optional[np.ndarray] = probs
+            self.payouts: np.ndarray = payouts
+            self.hist_payouts: Optional[List[np.ndarray]] = hist_payouts
+            self.live: bool = False
         else:
             self.live = True
             self.probs = None
             self.payouts = payouts
 
-    def pull(self, i):
+    def pull(self, i: int) -> Optional[int]:
         """
         Return the payout from a single pull of the bandit i's arm.
 
@@ -541,7 +570,7 @@ class Bandits:
 
         Returns
         -------
-        float or None
+        int or None
         """
 
         if self.live:
@@ -550,17 +579,19 @@ class Bandits:
             else:
                 return None
         elif self.hist_payouts:
-            if not hist[i]:
+            if not self.hist_payouts[i]:
                 return None
             else:
-                _p = hist[i][0]
-                hist[i] = hist[i][1:]
+                _p = self.hist_payouts[i][0]
+                self.hist_payouts[i] = self.hist_payouts[i][1:]
                 return _p
         else:
-            if np.random.rand() < self.probs[i]:
+            if self.probs is None:
+                return None
+            elif np.random.rand() < self.probs[i]:
                 return 1
             else:
                 return 0
 
-    def info(self):
+    def info(self) -> None:
         pass

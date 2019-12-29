@@ -130,3 +130,4 @@ The current development environment uses:
 
 - pytest >= 5.3 (5.3.2)
 - black >= 19.1 (19.10b0)
+- mypy = 0.761
