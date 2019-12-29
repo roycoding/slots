@@ -13,21 +13,22 @@ This documents details the current and planned API for slots. Non-implemented fe
     1. Current choice
     2. number of trials completed for each arm
     3. scores for each arm
-    4. average payout per arm (payout*wins/trials?)
+    4. average payout per arm (wins/trials?)
     5. Current regret.  Regret = Trials*mean_max - sum^T_t=1(reward_t)
         - See [ref](http://research.microsoft.com/en-us/um/people/sebubeck/SurveyBCB12.pdf)
 6. Use sane defaults.
 7. Be obvious and clean.
+8. For the time being handle only binary payouts.
 
 ### Library API ideas:
 #### Running slots with a live website
 ```Python
-# Using slots to determine the best of 3 variations on a live website. 3 is the default.
+# Using slots to determine the best of 3 variations on a live website. 3 is the default number of bandits and epsilon greedy is the default strategy.
 mab = slots.MAB(3, live=True)
 
 # Make the first choice randomly, record responses, and input reward
 # 2 was chosen.
-# Run online trial (input most recent result) until test criteria is met.
+# Update online trial (input most recent result) until test criteria is met.
 mab.online_trial(bandit=2,payout=1)
 
 # Repsonse of mab.online_trial() is a dict of the form:
@@ -35,24 +36,26 @@ mab.online_trial(bandit=2,payout=1)
 
 # Where:
 #   If the criterion is met, new_trial = False.
-#   choice is the current choice of arm to try.
+#   choice is the current choice of arm to try next.
 #   best is the current best estimate of the highest payout arm.
 ```
 
 #### Creating a MAB test instance:
 
 ```Python
-# Default: 3 bandits with random p_i and pay_i = 1
-mab = slots.MAB(live=False)
+# Default: 3 bandits with random probabilities, p_i.
+mab = slots.MAB()
 
-# Set up 4 bandits with random p_i and pay_i
-mab = slots.MAB(4, live=False)
+# Set up 4 bandits with random p_i.
+mab = slots.MAB(4)
 
 # 4 bandits with specified p_i
-mab = slots.MAB(probs = [0.2,0.1,0.4,0.1], live=False)
+mab = slots.MAB(probs = [0.2,0.1,0.4,0.1])
 
-# 3 bandits with specified pay_i
-mab = slots.MAB(payouts = [1,10,15], live=False)
+# Creating 3 bandits with histoprical payout data
+mab = slots.MAB(3, hist_payouts = np.array([[0,0,1,...],
+                                            [1,0,0,...],
+                                            [0,0,0,...]]))
 ```
 
 #### Running tests with strategy, S
@@ -98,8 +101,8 @@ mab.bandits.reset()
 
 # Set probabilities or payouts
 # (NOT YET IMPLEMENTED)
-mab.bandits.probs_set([0.1,0.05,0.2,0.15])
-mab.bandits.payouts_set([1,1.5,0.5,0.8])
+mab.bandits.set_probs([0.1,0.05,0.2,0.15])
+mab.bandits.set_hist_payouts([[1,1,0,0],[0,1,0,0]])
 ```
 
 #### Displaying / retrieving test info
@@ -114,10 +117,10 @@ mab.prob_est()
 
 # Retrieve bandit probability estimate of bandit i
 # (NOT YET IMPLEMENTED)
-mab.prob_est(i)
+mab.est_prob(i)
 
-# Retrieve bandit payout estimates (p * payout)
-mab.est_payout()
+# Retrieve bandit probability estimates
+mab.est_probs()
 
 # Retrieve current bandit choice
 # (NOT YET IMPLEMENTED, use mab.choices[-1])

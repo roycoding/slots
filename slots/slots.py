@@ -10,8 +10,12 @@ Scenarios:
         mab.best  # Bandit with highest probability after T trials
 
     - Run MAB test on "real" payout data (probabilites unknown).
-        mab = slots.MAB(payouts = [0,0,0,1,0,0,0,0,0,....])
-        mab.run(trials = 10000) # Max is length of payouts
+        mab = slots.MAB(hist_payouts = [[0,0,...], [1,0,...], [0,1,...])
+        mab.run(trials = 10000)
+
+    - Run MAB test on "live" data
+        mab = slots.MAB(num_bandits=3, live=True)
+        mab.online_trial(bandit=1, payout=0)
 """
 
 
@@ -27,66 +31,78 @@ class MAB(object):
         self,
         num_bandits=3,
         probs=None,
-        payouts=None,
+        hist_payouts=None,
         live=False,
         stop_criterion={"criterion": "regret", "value": 0.1},
     ):
         """
         Parameters
         ----------
-        num_bandits : int
+        num_bandits : int, optional
             default is 3
-        probs : np.array of floats
+        probs : array of floats, optional
             payout probabilities
-        payouts : np.array of floats
-            If `live` is True, `payouts` should be None.
-        live : bool
+        hist_payouts : list of lists of ints, one array per bandit, optional
+            This is for testing on historical data.
+            If you set `probs` or `live` is True, `hist_payouts` should be None.
+        live : bool, optional
             Whether the use is for a live, online trial.
-        stop_criterion : dict
+        stop_criterion : dict, optional
             Stopping criterion (str) and threshold value (float).
         """
 
         self.choices = []
 
         if not probs:
-            if not payouts:
+            if not hist_payouts:
                 if live:
                     # Live trial scenario, where nothing is known except the
                     # number of bandits
                     self.bandits = Bandits(
-                        live=True, payouts=np.zeros(num_bandits), probs=None
+                        live=True, payouts=np.zeros(num_bandits)
                     )
                 else:
-                    # A pure experiment scenario with random probabilities
-                    # and single payout values are 1.
+                    # A pure experiment scenario with random probabilities.
                     self.bandits = Bandits(
-                        probs=[np.random.rand() for x in range(num_bandits)],
-                        payouts=np.ones(num_bandits),
+                        probs=np.random.rand(num_bandits),
+                        payouts=np.zeros(num_bandits),
                         live=False,
                     )
             else:
                 # Run strategies on known historical sequence of payouts. Probabilities are not known.
+                num_bandits = len(hist_payouts)
                 if live:
                     print(
                         "slots: Cannot have a defined array of payouts and live=True. live set to False"
                     )
                 self.bandits = Bandits(
-                    probs=[np.random.rand() for x in range(len(payouts))],
-                    payouts=payouts,
+                    hist_payouts=hist_payouts,
+                    payouts=np.zeros(num_bandits),
                     live=False,
                 )
-                num_bandits = len(payouts)
         else:
-            if payouts:
-                # A pure experiment scenario with known probabilities and known single payout values.
-                self.bandits = Bandits(probs=probs, payouts=payouts, live=False)
-                num_bandits = len(payouts)
-            else:
-                # A pure experiment scenario with known probabilities and single payout values of 1.
-                self.bandits = Bandits(
-                    probs=probs, payouts=np.ones(len(probs)), live=False
-                )
+            if hist_payouts:
+                # A pure experiment scenario with known historical payout values. Probabilities will be ignored.
                 num_bandits = len(probs)
+                print(
+                    "slots: Since historical payout data has been supplied, probabilities will be ignored."
+                )
+                if len(probs) == len(payouts):
+                    self.bandits = Bandits(
+                        hist_payouts=hist_payouts,
+                        live=False,
+                        payouts=np.zeros(num_bandits),
+                    )
+                else:
+                    raise Exception(
+                        "slots: Dimensions of probs and payouts mismatched."
+                    )
+            else:
+                # A pure experiment scenario with known probabilities
+                num_bandits = len(probs)
+                self.bandits = Bandits(
+                    probs=probs, payouts=np.zeros(num_bandits), live=False
+                )
 
         self.wins = np.zeros(num_bandits)
         self.pulls = np.zeros(num_bandits)
@@ -123,12 +139,14 @@ class MAB(object):
         """
 
         if trials < 1:
-            raise Exception("MAB.run: Number of trials cannot be less than 1!")
+            raise Exception(
+                "slots.MAB.run: Number of trials cannot be less than 1!"
+            )
 
         else:
             if strategy not in self.strategies:
                 raise Exception(
-                    "MAB,run: Strategy name invalid. Choose from:"
+                    "slots.MAB,run: Strategy name invalid. Choose from:"
                     " {}".format(", ".join(self.strategies))
                 )
 
@@ -346,7 +364,7 @@ class MAB(object):
         else:
             return np.argmax(self.wins / (self.pulls + 0.1))
 
-    def est_payouts(self):
+    def est_probs(self):
         """
         Calculate current estimate of average payout for each bandit.
 
@@ -447,7 +465,11 @@ class MAB(object):
             )
 
         if self.crit_met():
-            return {"new_trial": False, "choice": self.best(), "best": self.best()}
+            return {
+                "new_trial": False,
+                "choice": self.best(),
+                "best": self.best(),
+            }
         else:
             return {
                 "new_trial": True,
@@ -463,7 +485,7 @@ class MAB(object):
         ----------
         bandit : int
             Bandit index
-        payout : float
+        payout : int (0 or 1)
 
         Returns
         -------
@@ -481,7 +503,7 @@ class Bandits:
     Bandit class.
     """
 
-    def __init__(self, probs, payouts, live=True):
+    def __init__(self, payouts, probs=None, hist_payouts=None, live=False):
         """
         Instantiate Bandit class, determining
             - Probabilities of bandit payouts
@@ -489,23 +511,19 @@ class Bandits:
 
         Parameters
         ----------
-        probs: array of floats
-            Probabilities of bandit payouts
-        payouts : array of floats
-            Amount of bandit payouts. If `live` is True, `payouts` should be an
-            N length array of zeros.
-        live : bool
+        payouts : array of ints
+            Cumulative bandit payouts. `payouts` should start as an N
+            length array of zeros, where N is the number of bandits.
+        probs: array of floats, optional
+            Probabilities of bandit payouts.
+        hist_payouts: list of arrays of ints, optional
+        live : bool, optional
         """
 
         if not live:
-            # Only use arrays of equal length
-            if len(probs) != len(payouts):
-                raise Exception(
-                    "Bandits.__init__: Probability and payouts "
-                    "arrays of different lengths!"
-                )
             self.probs = probs
             self.payouts = payouts
+            self.hist_payouts = hist_payouts
             self.live = False
         else:
             self.live = True
@@ -531,11 +549,18 @@ class Bandits:
                 return self.payouts[i].pop()
             else:
                 return None
+        elif self.hist_payouts:
+            if not hist[i]:
+                return None
+            else:
+                _p = hist[i][0]
+                hist[i] = hist[i][1:]
+                return _p
         else:
             if np.random.rand() < self.probs[i]:
-                return self.payouts[i]
+                return 1
             else:
-                return 0.0
+                return 0
 
     def info(self):
         pass
