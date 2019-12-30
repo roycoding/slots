@@ -500,7 +500,7 @@ class MAB(object):
                 "best": self.best(),
             }
 
-    def update(self, bandit, payout) -> None:
+    def update(self, bandit: int, payout: int) -> None:
         """
         Update bandit trials and payouts for given bandit.
 

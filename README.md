@@ -4,8 +4,13 @@
 Slots is intended to be a basic, very easy-to-use multi-armed bandit library for Python.
 
 [![PyPI](https://img.shields.io/pypi/v/slots)](https://pypi.org/project/slots/)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/slots)](https://pypi.org/project/slots/)
 [![Downloads](https://pepy.tech/badge/slots)](https://pepy.tech/project/slots)
+
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![type hints with mypy](https://img.shields.io/badge/type%20hints-mypy-brightgreen)]()
+
+
 
 #### Author
 [Roy Keyes](https://roycoding.github.io) -- roy.coding@gmail
@@ -51,13 +56,15 @@ b.run()
 
 To inspect the results and compare the estimated win probabilities versus the true win probabilities:
 ```Python
+# Current best guess
 b.best()
 > 0
 
-# Assuming payout of 1.0 for all "wins"
-b.est_payouts()
+# Estimate of the payout probabilities
+b.est_probs()
 > array([ 0.83888149,  0.78534031,  0.32786885])
 
+# Ground truth payout probabilities (if known)
 b.bandits.probs
 > [0.8020877268854065, 0.7185844454955193, 0.16348877912363646]
 ```
@@ -124,7 +131,7 @@ For documentation on the slots API, see [slots-docs.md](https://github.com/royco
 
 ### Contributing
 
-I welcome contributions, though the pace of development is highly variable. Please file issues and sumbit pull requests as makes sense.
+I welcome contributions, though the pace of development is highly variable. Please file issues and submit pull requests as makes sense.
 
 The current development environment uses:
 
