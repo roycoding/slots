@@ -18,7 +18,7 @@ Scenarios:
         mab.online_trial(bandit=1, payout=0)
 """
 
-from typing import Optional, List, Dict, Any, Union
+from typing import Optional, List, Dict, Any, Union, Callable
 
 import numpy as np
 
@@ -33,7 +33,7 @@ class MAB(object):
         num_bandits: Optional[int] = 3,
         probs: Optional[np.ndarray] = None,
         hist_payouts: Optional[List[np.ndarray]] = None,
-        live: bool = False,
+        live: Optional[bool] = False,
         stop_criterion: Optional[Dict] = {"criterion": "regret", "value": 0.1},
     ) -> None:
         """
@@ -59,7 +59,7 @@ class MAB(object):
                 if live:
                     # Live trial scenario, where nothing is known except the
                     # number of bandits
-                    self.bandits = Bandits(
+                    self.bandits: Bandits = Bandits(
                         live=True, payouts=np.zeros(num_bandits)
                     )
                 else:
@@ -109,7 +109,9 @@ class MAB(object):
         self.pulls: np.ndarray = np.zeros(num_bandits)
 
         # Set the stopping criteria
-        self.criteria: Dict = {"regret": self.regret_met}
+        self.criteria: Dict[str, Callable[[Optional[float]], bool]] = {
+            "regret": self.regret_met
+        }
         if not stop_criterion:
             self.criterion: str = "regret"
             self.stop_value: float = 0.1
@@ -243,14 +245,14 @@ class MAB(object):
         int
             Index of chosen bandit
         """
-        p_success_arms = [
+        p_success_arms: List[float] = [
             np.random.beta(self.wins[i] + 1, self.pulls[i] - self.wins[i] + 1)
             for i in range(len(self.wins))
         ]
 
         return np.array(p_success_arms).argmax()
 
-    def eps_greedy(self, params: Optional[Dict] = None) -> int:
+    def eps_greedy(self, params: Optional[Dict[str, float]] = None) -> int:
         """
         Run the epsilon-greedy strategy and update self.max_mean()
 
@@ -265,12 +267,19 @@ class MAB(object):
             Index of chosen bandit
         """
 
-        if params and type(params) == dict:
-            eps = params.get("epsilon")
-        else:
-            eps = 0.1
+        default_eps: float = 0.1
 
-        r = np.random.rand()
+        if params and type(params) == dict:
+            eps: float = params.get("epsilon", default_eps)
+            try:
+                float(eps)
+            except ValueError:
+                print("slots: eps_greedy: Setting eps to default")
+                eps = default_eps
+        else:
+            eps = default_eps
+
+        r: int = np.random.rand()
 
         if r < eps:
             return np.random.choice(
@@ -301,7 +310,7 @@ class MAB(object):
             try:
                 float(tau)
             except ValueError:
-                "slots: softmax: Setting tau to default"
+                print("slots: softmax: Setting tau to default")
                 tau = default_tau
         else:
             tau = default_tau
@@ -582,7 +591,7 @@ class Bandits:
             if not self.hist_payouts[i]:
                 return None
             else:
-                _p = self.hist_payouts[i][0]
+                _p: int = self.hist_payouts[i][0]
                 self.hist_payouts[i] = self.hist_payouts[i][1:]
                 return _p
         else:
